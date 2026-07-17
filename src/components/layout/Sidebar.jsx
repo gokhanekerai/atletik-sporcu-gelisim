@@ -35,7 +35,9 @@ export default function Sidebar() {
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">🏀</div>
+        <div className="sidebar-logo-icon">
+          <img src="/logo1.jpeg" alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+        </div>
         <div className="sidebar-logo-text">
           <h1>{t('app.name')}</h1>
           <p>{t('app.tagline')}</p>

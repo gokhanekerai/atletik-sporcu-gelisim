@@ -118,7 +118,7 @@ export default function Login() {
             }}
           />
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.4rem', color: '#fff' }}>
-            BasketTrack
+            Basket Sporcu Gelişim
           </h2>
           <p style={{ fontSize: '0.75rem', color: 'var(--c-text-3)', marginTop: 4 }}>
             Sporcu Gelişim Takip Sistemi
