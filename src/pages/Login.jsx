@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { LogIn, Key, Mail, Shield, User, Loader2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured, localDb } from '../lib/supabase';
 
-export default function Login() {
+export default function Login({ onLoginSuccess }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -28,19 +28,21 @@ export default function Login() {
           password
         });
         if (error) throw error;
-        
+
         // Fetch user profile to check role
         const { data: profile, error: profError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
           .single();
-        
+
         if (profError) throw profError;
 
         localStorage.setItem('user_role', profile.role);
         localStorage.setItem('user_id', profile.id);
-        
+
+        onLoginSuccess?.(); // App.jsx'teki state'i günceller, ekran anında değişir
+
         if (profile.role === 'admin') {
           navigate('/');
         } else {
@@ -59,6 +61,7 @@ export default function Login() {
           if (email === 'admin@atletik.com' && password === 'admin123') {
             localStorage.setItem('user_role', 'admin');
             localStorage.setItem('user_id', 'admin');
+            onLoginSuccess?.(); // App.jsx'teki state'i günceller, ekran anında değişir
             navigate('/');
           } else {
             setError('Geçersiz admin bilgileri. (Demo: admin@atletik.com / admin123)');
@@ -67,14 +70,15 @@ export default function Login() {
           // Student login: find matching player from localDb profiles/players
           const db = localDb.get();
           const playersList = db.profiles || [];
-          const matched = playersList.find(p => 
-            (p.email && p.email.toLowerCase() === email.toLowerCase()) && 
+          const matched = playersList.find(p =>
+            (p.email && p.email.toLowerCase() === email.toLowerCase()) &&
             (p.password ? p.password.toString() === password.toString() : p.jerseyNumber?.toString() === password.toString())
           );
-          
+
           if (matched || (email === 'ogrenci@atletik.com' && password === '7')) {
             localStorage.setItem('user_role', 'student');
             localStorage.setItem('user_id', matched ? matched.id : '1');
+            onLoginSuccess?.(); // App.jsx'teki state'i günceller, ekran anında değişir
             navigate(matched ? `/players/${matched.id}` : '/players/1');
           } else {
             setError('Öğrenci bulunamadı. (Demo: ogrenci@atletik.com / şifre: 7)');
@@ -104,13 +108,13 @@ export default function Login() {
       }}>
         {/* Logo/Header */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-5)' }}>
-          <img 
-            src="/logo1.jpeg" 
-            alt="Kocaeli Atletik" 
-            style={{ 
-              width: 88, 
-              height: 88, 
-              borderRadius: '50%', 
+          <img
+            src="/logo1.jpeg"
+            alt="Kocaeli Atletik"
+            style={{
+              width: 88,
+              height: 88,
+              borderRadius: '50%',
               border: '2px solid var(--c-primary)',
               display: 'block',
               margin: '0 auto var(--space-3)',
@@ -127,7 +131,7 @@ export default function Login() {
 
         {/* Role Select tab */}
         <div className="tabs" style={{ marginBottom: 'var(--space-5)' }}>
-          <button 
+          <button
             type="button"
             className={`tab-btn${role === 'admin' ? ' active' : ''}`}
             onClick={() => setRole('admin')}
@@ -135,7 +139,7 @@ export default function Login() {
           >
             <Shield size={14} /> Admin
           </button>
-          <button 
+          <button
             type="button"
             className={`tab-btn${role === 'student' ? ' active' : ''}`}
             onClick={() => setRole('student')}
@@ -165,8 +169,8 @@ export default function Login() {
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Mail size={12} /> {role === 'admin' ? 'E-posta' : 'Öğrenci E-posta / Kullanıcı Adı'}
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder={role === 'admin' ? 'admin@atletik.com' : 'ogrenci@atletik.com'}
@@ -178,8 +182,8 @@ export default function Login() {
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Key size={12} /> {role === 'admin' ? 'Şifre' : 'Forma Numarası (Şifre)'}
             </label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder={role === 'admin' ? '••••••' : 'Forma No (örn: 7)'}
@@ -187,12 +191,12 @@ export default function Login() {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
+          <button
+            type="submit"
+            className="btn btn-primary"
             disabled={loading}
-            style={{ 
-              width: '100%', 
+            style={{
+              width: '100%',
               justifyContent: 'center',
               padding: '12px',
               marginTop: 'var(--space-2)'
