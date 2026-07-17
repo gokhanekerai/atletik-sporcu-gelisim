@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { LogIn, Key, Mail, Shield, User, Loader2 } from 'lucide-react';
-import { supabase, isSupabaseConfigured, localDb } from '../lib/supabase';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import './i18n/index.js';
+
 
 export default function Login({ onLoginSuccess }) {
   const { t } = useTranslation();
