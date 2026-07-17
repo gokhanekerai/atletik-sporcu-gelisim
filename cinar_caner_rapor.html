@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Çınar Caner – Oyuncu Gelişim Raporu | Kocaeli Atletik</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@700;800;900&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --navy:#0b1929;
+  --navy2:#0f2038;
+  --navy3:#162843;
+  --red:#c0392b;
+  --red2:#e74c3c;
+  --orange:#e67e22;
+  --gold:#f1c40f;
+  --white:#fff;
+  --gray:#94a3b8;
+  --gray2:#64748b;
+  --green:#27ae60;
+  --green2:#2ecc71;
+  --yellow:#f39c12;
+  --font:'Inter',sans-serif;
+  --font-h:'Montserrat',sans-serif;
+}
+
+body{
+  font-family:var(--font);
+  background:#c8d3de;
+  padding:16px;
+  min-width:1420px;
+}
+
+/* Print button */
+.no-print{
+  display:flex;gap:12px;justify-content:center;
+  margin-bottom:14px;
+}
+.no-print button{
+  background:var(--navy2);color:#fff;border:none;
+  padding:10px 28px;border-radius:8px;font-size:13px;
+  font-weight:700;cursor:pointer;letter-spacing:.03em;
+  transition:.2s;
+}
+.no-print button:hover{background:var(--red);}
+
+/* Grid */
+.report{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  width:1400px;
+  margin:0 auto;
+  box-shadow:0 24px 80px rgba(0,0,0,.55);
+  border-radius:4px;
+  overflow:hidden;
+}
+
+/* Panel */
+.panel{
+  background:var(--navy2);
+  padding:20px 18px 50px;
+  position:relative;
+  overflow:hidden;
+  border-right:1px solid rgba(255,255,255,.05);
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+/* Panel header */
+.ph{
+  display:flex;align-items:center;gap:8px;
+  padding-bottom:10px;
+  border-bottom:2px solid var(--red);
+  margin-bottom:14px;
+}
+.ph-num{
+  background:var(--red);color:#fff;
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:12px;flex-shrink:0;
+}
+.ph-title{
+  font-family:var(--font-h);font-size:12px;font-weight:800;
+  color:#fff;text-transform:uppercase;letter-spacing:.07em;flex:1;
+}
+.ph-badge{
+  width:32px;height:32px;background:var(--navy3);
+  border:1.5px solid rgba(192,57,43,.6);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:900;color:var(--red);
+}
+
+/* Page num */
+.pnum{
+  position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:rgba(255,255,255,.18);font-weight:800;
+  letter-spacing:.08em;
+}
+
+/* Section label */
+.sl{
+  font-size:9.5px;font-weight:800;color:var(--red);
+  text-transform:uppercase;letter-spacing:.1em;
+  margin:12px 0 7px;
+  display:flex;align-items:center;gap:5px;
+}
+.sl::before{content:'';width:10px;height:1.5px;background:var(--red);border-radius:2px;}
+
+/* Info row */
+.ir{display:flex;align-items:flex-start;gap:7px;margin-bottom:5px;font-size:10.5px;}
+.ir-lbl{color:var(--gray);min-width:105px;font-size:9.5px;flex-shrink:0;}
+.ir-val{color:#fff;font-weight:600;}
+
+/* Box */
+.box{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:7px;padding:10px 12px;
+}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;margin-top:6px;}
+.tbl th{
+  background:rgba(255,255,255,.06);color:var(--gray);
+  font-size:9px;text-transform:uppercase;letter-spacing:.07em;
+  padding:5px 8px;text-align:left;
+}
+.tbl td{
+  padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:10.5px;color:#fff;vertical-align:middle;
+}
+.tbl tr:last-child td{border-bottom:none;}
+
+/* Dot */
+.d-g{
+  display:inline-block;width:10px;height:10px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 5px var(--green);flex-shrink:0;
+}
+.d-y{
+  display:inline-block;width:10px;height:10px;border-radius:50%;
+  background:var(--yellow);box-shadow:0 0 5px var(--yellow);flex-shrink:0;
+}
+
+/* Skill row */
+.sr{
+  display:flex;align-items:flex-start;gap:7px;
+  padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.sr:last-child{border-bottom:none;}
+.sr-name{font-size:10px;font-weight:700;color:#fff;min-width:112px;flex-shrink:0;padding-top:1px;}
+.sr-dot{padding-top:3px;flex-shrink:0;}
+.sr-txt{font-size:9.5px;color:var(--gray);line-height:1.4;flex:1;}
+
+/* Progress bar */
+.pb-wrap{margin-bottom:7px;}
+.pb-head{display:flex;justify-content:space-between;margin-bottom:3px;}
+.pb-label{font-size:9.5px;color:var(--gray);}
+.pb-val{font-size:9.5px;font-weight:700;}
+.pb{height:4px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;}
+.pb-fill{height:100%;border-radius:3px;}
+
+/* Badge */
+.badge{padding:2px 8px;border-radius:10px;font-size:9.5px;font-weight:700;}
+.badge-ok{background:rgba(39,174,96,.18);color:var(--green2);}
+.badge-warn{background:rgba(243,156,18,.18);color:var(--yellow);}
+.badge-no{background:rgba(100,116,139,.15);color:var(--gray);}
+
+/* Ratio card */
+.ratio-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px;}
+.ratio-c{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:7px;padding:8px;text-align:center;
+}
+.ratio-v{font-family:var(--font-h);font-size:19px;font-weight:900;color:var(--orange);}
+.ratio-l{font-size:8.5px;color:var(--gray);margin-top:1px;}
+
+/* Potential box */
+.pot-box{
+  background:linear-gradient(135deg,rgba(192,57,43,.12),rgba(231,76,60,.05));
+  border:1px solid rgba(192,57,43,.22);border-radius:10px;
+  padding:14px;text-align:center;margin-top:10px;
+}
+.pot-score{
+  font-family:var(--font-h);font-size:46px;font-weight:900;color:#fff;line-height:1;
+}
+.pot-score span{font-size:16px;color:var(--gray);font-weight:400;}
+.pot-bar-wrap{height:7px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;margin:8px 0 5px;}
+.pot-bar-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--orange));border-radius:4px;}
+.pot-lbl{font-size:11px;font-weight:700;color:var(--green);}
+.pot-sub{font-size:9px;color:var(--gray);margin-top:3px;line-height:1.5;}
+
+/* Coach */
+.qm{font-family:Georgia,serif;font-size:60px;color:rgba(192,57,43,.28);line-height:1;}
+.c-sec{font-size:10px;font-weight:800;color:var(--red);text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;}
+.c-txt{font-size:10.5px;color:var(--gray);line-height:1.65;margin-bottom:2px;}
+.c-sign{text-align:center;font-family:Georgia,serif;font-style:italic;color:var(--orange);font-size:18px;margin-top:14px;}
+.c-sign-sub{font-size:9.5px;color:var(--gray);font-style:normal;text-align:center;margin-top:2px;}
+
+/* Goal row */
+.gr{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.gr:last-child{border-bottom:none;}
+.gr-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
+.gr-txt{font-size:10.5px;font-weight:600;color:#fff;}
+
+/* Summary */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+.sum-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:10px 11px;}
+.sum-title{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;display:flex;align-items:center;gap:4px;}
+.sum-title.g{color:var(--green);}
+.sum-title.o{color:var(--orange);}
+.sum-item{display:flex;align-items:flex-start;gap:4px;margin-bottom:4px;font-size:9.5px;color:var(--gray);line-height:1.35;}
+
+/* Parent msg */
+.parent-box{
+  background:linear-gradient(135deg,rgba(39,174,96,.07),rgba(39,174,96,.02));
+  border:1px solid rgba(39,174,96,.18);border-radius:9px;padding:13px;
+}
+.parent-title{font-size:10.5px;font-weight:700;color:var(--green);margin-bottom:7px;}
+.parent-txt{font-size:10px;color:var(--gray);line-height:1.65;}
+.parent-sign{font-size:10px;font-weight:700;color:var(--red2);margin-top:7px;text-align:right;}
+
+/* Footer strip */
+.footer-strip{
+  background:rgba(0,0,0,.35);border-top:1px solid rgba(255,255,255,.07);
+  padding:8px 14px;position:absolute;bottom:0;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.footer-strip .fi{font-size:8.5px;color:var(--gray2);display:flex;gap:14px;}
+.footer-strip .fi strong{color:var(--gray);}
+
+/* Hero panel */
+.hero-panel{
+  background:linear-gradient(170deg,#0b1929 0%,#1a0b0b 55%,#230a0a 100%);
+  display:flex;flex-direction:column;align-items:center;
+  padding:20px 14px 50px;position:relative;overflow:hidden;
+}
+.hero-badge{
+  width:66px;height:66px;background:rgba(255,255,255,.06);
+  border:2.5px solid var(--red);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  margin:0 auto 5px;
+}
+.hero-badge-txt{font-family:var(--font-h);font-size:10px;font-weight:900;color:var(--red);text-align:center;line-height:1.2;}
+.hero-club-sub{font-size:8.5px;color:var(--gray2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;}
+.hero-title-h1{font-family:var(--font-h);color:#fff;font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;text-align:center;margin-bottom:2px;}
+.hero-title-h2{font-family:var(--font-h);color:var(--red2);font-size:30px;font-weight:900;text-transform:uppercase;text-align:center;line-height:1;}
+.hero-season{font-size:9px;color:var(--gray2);letter-spacing:.1em;margin-top:4px;margin-bottom:12px;}
+.hero-img-area{
+  width:170px;height:200px;
+  background:linear-gradient(180deg,rgba(192,57,43,.18),rgba(192,57,43,.04));
+  border-radius:10px;border:1.5px solid rgba(192,57,43,.35);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;margin-bottom:12px;
+}
+.hero-img-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 30%,rgba(192,57,43,.2),transparent 70%);
+}
+.hero-img-emoji{font-size:88px;position:relative;z-index:1;filter:drop-shadow(0 4px 20px rgba(192,57,43,.5));}
+.hero-num{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  background:var(--red);color:#fff;font-family:var(--font-h);
+  font-size:18px;font-weight:900;width:38px;height:38px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  z-index:2;box-shadow:0 4px 14px rgba(192,57,43,.5);
+}
+.hero-name{text-align:center;margin-bottom:12px;}
+.hero-name h3{font-family:var(--font-h);color:#fff;font-size:19px;font-weight:900;text-transform:uppercase;line-height:1.1;}
+.hero-name p{color:var(--red2);font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-top:3px;}
+.hero-footer-area{border-top:1px solid rgba(255,255,255,.09);padding-top:10px;width:100%;text-align:center;}
+.hero-prep{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:5px;}
+.hero-prep-icon{width:26px;height:26px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;}
+.hero-prep-t p:first-child{font-size:8.5px;color:var(--gray2);text-align:left;}
+.hero-prep-t p:last-child{font-size:10.5px;color:#fff;font-weight:700;text-align:left;}
+.hero-ai{font-size:7.5px;color:var(--gray2);opacity:.7;}
+
+/* Reliability */
+.rel-box{
+  background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.18);
+  border-radius:7px;padding:9px 11px;margin-top:9px;
+}
+.rel-title{font-size:9.5px;font-weight:700;color:var(--red2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;}
+.rel-txt{font-size:9.5px;color:var(--gray);line-height:1.5;}
+
+/* Legend */
+.legend{display:flex;gap:12px;margin-top:9px;font-size:8.5px;color:var(--gray);align-items:center;}
+.ld{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:2px;}
+
+/* Tactic label */
+.tsl{
+  font-size:9.5px;font-weight:800;color:var(--orange);
+  text-transform:uppercase;letter-spacing:.08em;
+  margin:12px 0 7px;display:flex;align-items:center;gap:5px;
+}
+
+/* NOTE box */
+.note-box{
+  background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.18);
+  border-radius:7px;padding:9px 11px;margin-top:12px;
+}
+
+@media print{
+  body{background:#fff;padding:0;}
+  .no-print{display:none;}
+  .report{box-shadow:none;width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">🖨️ Yazdır / PDF Kaydet</button>
+  <button onclick="window.location.reload()">🔄 Yenile</button>
+</div>
+
+<div class="report">
+
+<!-- ═══════════════════════════
+     0 · KAPAK
+═══════════════════════════ -->
+<div class="hero-panel">
+  <img src="logo1.jpeg" alt="Kocaeli Atletik" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); border: 2px solid var(--red);">
+  <div class="hero-club-sub">Spor Kulübü</div>
+  <div class="hero-title-h1">Oyuncu Gelişim</div>
+  <div class="hero-title-h2">RAPORU</div>
+  <div class="hero-season">2025 – 2026 SEZONU</div>
+
+  <div class="hero-img-area">
+    <div class="hero-img-bg"></div>
+    <div class="hero-img-emoji">🏀</div>
+    <div class="hero-num">0</div>
+  </div>
+
+  <div class="hero-name">
+    <h3>ÇINAR<br>CANER</h3>
+    <p>Kocaeli Atletik U9/U10</p>
+  </div>
+
+  <div class="hero-footer-area">
+    <div class="hero-prep">
+      <div class="hero-prep-icon">🏋</div>
+      <div class="hero-prep-t">
+        <p>HAZIRLAYAN</p>
+        <p>Basketbol Antrenörü</p>
+      </div>
+    </div>
+    <div class="hero-ai">🤖 Bilimsel Analiz & Dijital Raporlama Desteği: ChatGPT (OpenAI)</div>
+  </div>
+  <div class="pnum">01</div>
+</div>
+
+<!-- ═══════════════════════════
+     1 · KİMLİK / GENETİK / SAĞLIK
+═══════════════════════════ -->
+<div class="panel">
+  <div class="ph"><div class="ph-num">1</div><div class="ph-title">Kimlik – Genetik – Sağlık</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
+
+  <div class="sl">Sporcu Kimlik Bilgileri</div>
+  <div class="ir"><span style="font-size:13px">👤</span><span class="ir-lbl">Ad Soyad</span><span class="ir-val">Çınar Caner</span></div>
+  <div class="ir"><span style="font-size:13px">🎂</span><span class="ir-lbl">Doğum Tarihi</span><span class="ir-val">13.10.2017</span></div>
+  <div class="ir"><span style="font-size:13px">📅</span><span class="ir-lbl">Yaş</span><span class="ir-val">8</span></div>
+  <div class="ir"><span style="font-size:13px">⚥</span><span class="ir-lbl">Cinsiyet</span><span class="ir-val">Erkek</span></div>
+  <div class="ir"><span style="font-size:13px">📏</span><span class="ir-lbl">Ölçüm Tarihi</span><span class="ir-val">2026</span></div>
+  <div class="ir"><span style="font-size:13px">🏀</span><span class="ir-lbl">Takım</span><span class="ir-val">Kocaeli Atletik U9/U10</span></div>
+  <div class="ir"><span style="font-size:13px">✋</span><span class="ir-lbl">Dominant El</span><span class="ir-val">Sağ</span></div>
+  <div class="ir"><span style="font-size:13px">🎯</span><span class="ir-lbl">Pozisyon</span><span class="ir-val">1 – Oyun Kurucu</span></div>
+  <div class="ir"><span style="font-size:13px">🏃</span><span class="ir-lbl">Antrenman Katılım</span><span class="ir-val">Yüksek</span></div>
+  <div class="ir"><span style="font-size:13px">📚</span><span class="ir-lbl">Akademik Durum</span><span class="ir-val">Başarılı</span></div>
+
+  <div class="sl">Genetik Bilgiler</div>
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:10.5px;"><span style="color:var(--gray);">Baba Boyu</span><span style="color:#fff;font-weight:700;">182 cm</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:10.5px;"><span style="color:var(--gray);">Anne Boyu</span><span style="color:#fff;font-weight:700;">175 cm</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:10.5px;"><span style="color:var(--gray);">Hedef Boy (Genetik)</span><span style="color:var(--orange);font-weight:700;">183.5 ± 8 cm</span></div>
+    <div style="font-size:9.5px;color:var(--gray);border-top:1px solid rgba(255,255,255,.06);padding-top:7px;font-style:italic;line-height:1.5;">
+      Anne ve baba boy ortalaması yüksek atletik potansiyele işaret etmektedir. Uzun dönem takip önerilir.
+    </div>
+  </div>
+
+  <div class="sl">Sağlık Bilgileri</div>
+  <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:10px;color:var(--gray);">Kronik Rahatsızlık</span><span class="badge badge-no">Yok</span></div>
+  <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:10px;color:var(--gray);">Alerji</span><span class="badge badge-warn">Var *</span></div>
+  <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:10px;color:var(--gray);">Düzenli İlaç Kullanımı</span><span class="badge badge-no">Yok</span></div>
+  <p style="font-size:9px;color:var(--gray2);font-style:italic;">* Net tanı bulunmuyor</p>
+
+  <div class="rel-box">
+    <div class="rel-title">⚠ Veri Güvenirliği</div>
+    <div class="rel-txt">2025 kulaç, bel ve omuz ölçümlerinde hata şüphesi vardır; 2026 referans alınmıştır. Yöntem: Standart Antropometrik Ölçüm.</div>
+  </div>
+  <div class="pnum">02</div>
+</div>
+
+<!-- ═══════════════════════════
+     2 · ANTROPOMETRİK
+═══════════════════════════ -->
+<div class="panel">
+  <div class="ph"><div class="ph-num">2</div><div class="ph-title">Antropometrik Değerlendirme</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
+
+  <div class="sl">Fiziksel Ölçümler</div>
+  <table class="tbl">
+    <thead><tr><th>Ölçüm</th><th>2025</th><th>2026</th><th>Değişim</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>🦴 Boy</td><td style="color:var(--gray2);">133 cm</td>
+        <td style="color:var(--green);font-weight:700;">135 cm</td>
+        <td style="color:var(--green);font-weight:700;">↑ +2 cm</td>
+      </tr>
+      <tr>
+        <td>⚖️ Kilo</td><td style="color:var(--gray2);">27 kg</td>
+        <td style="color:var(--green);font-weight:700;">30 kg</td>
+        <td style="color:var(--green);font-weight:700;">↑ +3 kg</td>
+      </tr>
+      <tr>
+        <td>🤲 Kulaç</td><td style="color:var(--gray2);">50* cm</td>
+        <td style="color:var(--green);font-weight:700;">139 cm</td>
+        <td style="color:var(--gray2);">— hata</td>
+      </tr>
+      <tr>
+        <td>📐 Bel</td><td style="color:var(--gray2);">23* cm</td>
+        <td style="color:var(--green);font-weight:700;">65 cm</td>
+        <td style="color:var(--gray2);">— hata</td>
+      </tr>
+      <tr>
+        <td>💪 Omuz</td><td style="color:var(--gray2);">12* cm</td>
+        <td style="color:var(--green);font-weight:700;">35 cm</td>
+        <td style="color:var(--gray2);">— hata</td>
+      </tr>
+      <tr>
+        <td>🦵 Bacak</td><td style="color:var(--gray2);">75 cm</td>
+        <td style="color:var(--green);font-weight:700;">82 cm</td>
+        <td style="color:var(--green);font-weight:700;">↑ +7 cm</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:8.5px;color:var(--gray2);margin-top:4px;font-style:italic;">* 2025 ölçüm hatası, 2026 referans.</p>
+
+  <div class="sl">Vücut Oranları (2026)</div>
+  <div class="ratio-grid">
+    <div class="ratio-c"><div class="ratio-v">1.03</div><div class="ratio-l">Kulaç / Boy</div></div>
+    <div class="ratio-c"><div class="ratio-v">0.61</div><div class="ratio-l">Bacak / Boy</div></div>
+    <div class="ratio-c"><div class="ratio-v">0.48</div><div class="ratio-l">Bel / Boy</div></div>
+    <div class="ratio-c"><div class="ratio-v">0.26</div><div class="ratio-l">Omuz / Boy</div></div>
+  </div>
+
+  <div class="sl">Genel Potansiyel Skoru</div>
+  <div class="pot-box">
+    <div class="pot-score">75<span>/100</span></div>
+    <div class="pot-bar-wrap"><div class="pot-bar-fill" style="width:75%;"></div></div>
+    <div class="pot-lbl">İyi Seviye Potansiyel</div>
+    <div class="pot-sub">Fiziksel gelişim, vücut oranları ve genetik potansiyeli basketbol için idealdir. Oranlar yaş grubunda ideal aralıklardadır.</div>
+  </div>
+
+  <div class="sl">Bilimsel Değerlendirme</div>
+  <div class="box" style="font-size:9.5px;color:var(--gray);line-height:1.55;">
+    Çınar'ın boy uzaması hızı, kilo artışı ve vücut oranları yaşlarına göre ideal aralıktadır. Özellikle bacak uzunluğu ve kulaç uzunluğu izlenmelidir. Düzenli antrenman ile fiziksel gelişimi olumlu sürecektir.
+  </div>
+  <div class="pnum">03</div>
+</div>
+
+<!-- ═══════════════════════════
+     3 · TEKNİK ANALİZ
+═══════════════════════════ -->
+<div class="panel">
+  <div class="ph"><div class="ph-num">3</div><div class="ph-title">Teknik Analiz</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
+
+  <div class="sl">Teknik Beceriler</div>
+  <div class="sr"><div class="sr-name">Sol El Gelişimi</div><div class="sr-dot"><span class="d-y"></span></div><div class="sr-txt">Sezonun ikinci yarısında belirgin gelişim göstermiştir ancak hâlâ ana gelişim alanlarından biridir.</div></div>
+  <div class="sr"><div class="sr-name">Sağ El Bitirişleri</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Sağ el bitiriş repertuvarı sezon boyunca istikrarlı şekilde gelişmiştir.</div></div>
+  <div class="sr"><div class="sr-name">Şut Mekaniği</div><div class="sr-dot"><span class="d-y"></span></div><div class="sr-txt">Orta seviyededir. Tekrar ve özgüvenle birlikte gelişmesi beklenmektedir.</div></div>
+  <div class="sr"><div class="sr-name">Top Advance</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Sorumluluk alarak topu taşımaktadır, daha kaliteli kararlarla geliştirmelidir.</div></div>
+  <div class="sr"><div class="sr-name">Skip &amp; Go</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Yaş grubuna göre iyi seviyede kullanılmaktadır.</div></div>
+  <div class="sr"><div class="sr-name">Ball Handling</div><div class="sr-dot"><span class="d-y"></span></div><div class="sr-txt">Özellikle sol el ve yön değiştirmelerde ek bireysel çalışma önerilir.</div></div>
+  <div class="sr"><div class="sr-name">Akselerasyon</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Hız değişimlerini ve tempo kontrolünü etkili kullanabilmektedir.</div></div>
+
+  <div class="legend">
+    <span><span class="ld" style="background:var(--green);"></span> Güçlü Yön</span>
+    <span><span class="ld" style="background:var(--yellow);"></span> Gelişim Alanı</span>
+  </div>
+
+  <div class="sl" style="margin-top:14px;">Görsel Değerlendirme</div>
+  <div class="pb-wrap"><div class="pb-head"><span class="pb-label">Sağ El Bitirişleri</span><span class="pb-val" style="color:var(--green);">Güçlü</span></div><div class="pb"><div class="pb-fill" style="width:80%;background:linear-gradient(90deg,var(--green),rgba(46,204,113,.4));"></div></div></div>
+  <div class="pb-wrap"><div class="pb-head"><span class="pb-label">Top Advance</span><span class="pb-val" style="color:var(--green);">Güçlü</span></div><div class="pb"><div class="pb-fill" style="width:75%;background:linear-gradient(90deg,var(--green),rgba(46,204,113,.4));"></div></div></div>
+  <div class="pb-wrap"><div class="pb-head"><span class="pb-label">Akselerasyon</span><span class="pb-val" style="color:var(--green);">Güçlü</span></div><div class="pb"><div class="pb-fill" style="width:78%;background:linear-gradient(90deg,var(--green),rgba(46,204,113,.4));"></div></div></div>
+  <div class="pb-wrap"><div class="pb-head"><span class="pb-label">Sol El Gelişimi</span><span class="pb-val" style="color:var(--yellow);">Gelişiyor</span></div><div class="pb"><div class="pb-fill" style="width:50%;background:linear-gradient(90deg,var(--yellow),rgba(243,156,18,.4));"></div></div></div>
+  <div class="pb-wrap"><div class="pb-head"><span class="pb-label">Şut Mekaniği</span><span class="pb-val" style="color:var(--yellow);">Gelişiyor</span></div><div class="pb"><div class="pb-fill" style="width:45%;background:linear-gradient(90deg,var(--yellow),rgba(243,156,18,.4));"></div></div></div>
+  <div class="pb-wrap"><div class="pb-head"><span class="pb-label">Ball Handling</span><span class="pb-val" style="color:var(--yellow);">Gelişiyor</span></div><div class="pb"><div class="pb-fill" style="width:52%;background:linear-gradient(90deg,var(--yellow),rgba(243,156,18,.4));"></div></div></div>
+  <div class="pnum">04</div>
+</div>
+
+<!-- ═══════════════════════════
+     4 · TAKTİK & ZİHİNSEL
+═══════════════════════════ -->
+<div class="panel">
+  <div class="ph"><div class="ph-num">4</div><div class="ph-title">Taktik &amp; Zihinsel Analiz</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
+
+  <div class="tsl">⚡ Taktiksel Beceriler</div>
+  <div class="sr"><div class="sr-name">Basketbol IQ</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Oyun okuma ve çözüm üretme konusunda takımın öne çıkan oyuncularındandır.</div></div>
+  <div class="sr"><div class="sr-name">Yardım Savunması</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">2v1 ve yardım savunmalarında doğru kararlar verebilmektedir.</div></div>
+  <div class="sr"><div class="sr-name">Liderlik</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Takım arkadaşlarını konuşarak yönlendiren doğal bir saha içi lideridir.</div></div>
+  <div class="sr"><div class="sr-name">Mücadele Gücü</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Kaybetmekten hoşlanmayan ve son ana kadar mücadele eden karaktere sahiptir.</div></div>
+  <div class="sr"><div class="sr-name">Temaslı Oyun</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Teması seven ve fiziksel oyundan kaçmayan bir profildir.</div></div>
+  <div class="sr"><div class="sr-name">Savunma Kimliği</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Sezon boyunca skordan çok savunması ve enerjisiyle öne çıkmıştır.</div></div>
+
+  <div class="legend">
+    <span><span class="ld" style="background:var(--green);"></span> Güçlü Yön</span>
+    <span><span class="ld" style="background:var(--yellow);"></span> Gelişim Alanı</span>
+  </div>
+
+  <div class="tsl" style="margin-top:14px;">🧠 Zihinsel &amp; Duygusal Beceriler</div>
+  <div class="sr"><div class="sr-name">Motivasyon</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Antrenman ve maçlarda motivasyonu yüksek.</div></div>
+  <div class="sr"><div class="sr-name">Odaklanma</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Antrenman ve maçlarda odağı çok iyi.</div></div>
+  <div class="sr"><div class="sr-name">Özgüven</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Kendine güveni yüksek, zorlu durumlarda paniğe kapılmaz.</div></div>
+  <div class="sr"><div class="sr-name">Başarısızlıkla Baş Çıkma</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Özgün olduğunda takımını toparlayan biri olabiliyor.</div></div>
+  <div class="sr"><div class="sr-name">Disiplin</div><div class="sr-dot"><span class="d-g"></span></div><div class="sr-txt">Kurallara uyumlu, disiplinli bir sporcu.</div></div>
+  <div class="pnum">05</div>
+</div>
+
+<!-- ═══════════════════════════
+     5 · COACH REPORT
+═══════════════════════════ -->
+<div class="panel">
+  <div class="ph"><div class="ph-num">5</div><div class="ph-title">Coach Report</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
+
+  <div class="qm">"</div>
+
+  <div class="c-sec">Antrenör Yorumu</div>
+
+  <div class="c-sec" style="color:#fff;font-size:10px;">Genel Sezon Değerlendirmesi</div>
+  <div class="c-txt">Çınar Caner sezon boyunca skor üretiminden çok savunması, mücadelesi ve pes etmeyen yapısıyla ön plana çıkmıştır.</div>
+
+  <div class="c-sec" style="color:#fff;font-size:10px;">Teknik ve Oyun Kimliği</div>
+  <div class="c-txt">Basketbol IQ'su yüksek, oyunu paylaşmayı seven ve doğru yerde topu advance eden bir oyuncudur. Sol el gelişimi sezonun ikinci yarısında ivme kazanmıştır.</div>
+
+  <div class="c-sec" style="color:#fff;font-size:10px;">Liderlik ve Takım Kültürü</div>
+  <div class="c-txt">Takım arkadaşlarını saha içinde yönlendirerek liderlik etmektedir. İletişimi güçlü ve takım odaklıdır.</div>
+
+  <div class="c-sec" style="color:#fff;font-size:10px;">Mental Profil</div>
+  <div class="c-txt">Kaybetmekten hoşlanmayan yapısı ve mücadele gücü en önemli özelliklerindendir. Her top için savaşması nedeniyle sezon boyunca maç sonlarında ayak tabanlarında deri soyulmaları yaşamasına rağmen mücadeleden vazgeçmemiştir.</div>
+
+  <div class="c-sec" style="color:#fff;font-size:10px;">Gelecek Sezon Beklentisi</div>
+  <div class="c-txt">Sol el kullanımını, şut istikrarını ve topu daha kaliteli advance etme becerisini geliştirdiğinde takım üzerindeki etkisi daha da artacaktır. Daha güzel sezonlarda birlikte gelişmek dileğiyle.</div>
+
+  <div class="c-sign">Basketbol Antrenörü</div>
+  <div class="c-sign-sub">Başantrenör – Kocaeli Atletik Spor Kulübü</div>
+  <div class="pnum">06</div>
+</div>
+
+<!-- ═══════════════════════════
+     6 · GELİŞİM PLANI
+═══════════════════════════ -->
+<div class="panel">
+  <div class="ph"><div class="ph-num">6</div><div class="ph-title">Gelişim Planı</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
+
+  <div class="sl">3 Aylık Gelişim Hedefleri</div>
+  <div class="box" style="margin-bottom:14px;">
+    <div class="gr"><div class="gr-icon">🏋️</div><div class="gr-txt">Sol el bitirişlerini geliştirmek</div></div>
+    <div class="gr"><div class="gr-icon">🏀</div><div class="gr-txt">Topsuz oyunda aktif kalmak</div></div>
+    <div class="gr"><div class="gr-icon">🤝</div><div class="gr-txt">Takım arkadaşlarına daha fazla oyuna katmak</div></div>
+    <div class="gr"><div class="gr-icon">⚡</div><div class="gr-txt">Patlayıcılık ve çabukluk kazanımı</div></div>
+    <div class="gr"><div class="gr-icon">💪</div><div class="gr-txt">Duygusal dayanıklılığı artırmak</div></div>
+  </div>
+
+  <div class="sl">Gelişim Takip Tablosu</div>
+  <table class="tbl">
+    <thead><tr><th>Alan</th><th>Hedef</th><th>Durum</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span style="font-size:13px">🏀</span> <strong>Teknik</strong></td>
+        <td style="color:var(--gray);font-size:9.5px;">Sol el, şut istikrarı, ball handling</td>
+        <td><span class="d-y"></span></td>
+      </tr>
+      <tr>
+        <td><span style="font-size:13px">🧠</span> <strong>Taktik</strong></td>
+        <td style="color:var(--gray);font-size:9.5px;">Daha kaliteli top advance</td>
+        <td><span class="d-g"></span></td>
+      </tr>
+      <tr>
+        <td><span style="font-size:13px">🔥</span> <strong>Mental</strong></td>
+        <td style="color:var(--gray);font-size:9.5px;">Liderlik ve mücadele kimliğini koruma</td>
+        <td><span class="d-g"></span></td>
+      </tr>
+      <tr>
+        <td><span style="font-size:13px">💪</span> <strong>Fiziksel</strong></td>
+        <td style="color:var(--gray);font-size:9.5px;">Temaslı oyun + ayak sağlığı</td>
+        <td><span class="d-y"></span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note-box" style="margin-top:12px;">
+    <div style="font-size:9.5px;font-weight:700;color:var(--red2);margin-bottom:3px;">📌 Not</div>
+    <div style="font-size:9.5px;color:var(--gray);line-height:1.5;">Bu plan düzenli ölçümler ve gözlemler doğrultusunda güncellenecektir.</div>
+  </div>
+  <div class="pnum">07</div>
+</div>
+
+<!-- ═══════════════════════════
+     7 · SONUÇ & VELİ MESAJI
+═══════════════════════════ -->
+<div class="panel" style="padding-bottom:62px;">
+  <div class="ph"><div class="ph-num">7</div><div class="ph-title">Sonuç &amp; Veli Mesajı</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
+
+  <div class="sum-grid">
+    <div class="sum-box">
+      <div class="sum-title g">✅ Güçlü Yönler</div>
+      <div class="sum-item"><span style="color:var(--green);">●</span> Liderlik</div>
+      <div class="sum-item"><span style="color:var(--green);">●</span> Basketbol IQ</div>
+      <div class="sum-item"><span style="color:var(--green);">●</span> Mücadele gücü</div>
+      <div class="sum-item"><span style="color:var(--green);">●</span> Top hakimiyeti (sağ)</div>
+      <div class="sum-item"><span style="color:var(--green);">●</span> Yardım savunması</div>
+      <div class="sum-item"><span style="color:var(--green);">●</span> Çalışkanlık & motivasyon</div>
+    </div>
+    <div class="sum-box">
+      <div class="sum-title o">⚡ Gelişim Alanları</div>
+      <div class="sum-item"><span style="color:var(--orange);">●</span> Sol el kullanımı</div>
+      <div class="sum-item"><span style="color:var(--orange);">●</span> Topsuz oyun aktivitesi</div>
+      <div class="sum-item"><span style="color:var(--orange);">●</span> Şut mekaniği & istikrar</div>
+      <div class="sum-item"><span style="color:var(--orange);">●</span> Ball handling (sol)</div>
+      <div class="sum-item"><span style="color:var(--orange);">●</span> Ayak sağlığı / toparlanma</div>
+      <div class="sum-item"><span style="color:var(--orange);">●</span> Top advance kalitesi</div>
+    </div>
+  </div>
+
+  <div class="parent-box">
+    <div class="parent-title">💌 Veli Mesajı</div>
+    <div class="parent-txt">
+      Sevgili Velimiz,<br><br>
+      Çınar'ın gelişimi bizler için çok kıymetlidir. Bu rapor, çocuğunuzun mevcut durumunu, güçlü yönlerini ve gelişim alanlarını objektif verilerle ortaya koymak için hazırlanmıştır.<br><br>
+      Birlikte çalışarak onun potansiyelini en üst seviyeye taşıyacağız. Desteğiniz ve güveniniz için teşekkür ederiz.
+    </div>
+    <div class="parent-sign">Kocaeli Atletik Spor Kulübü</div>
+  </div>
+
+  <div class="footer-strip">
+    <div class="fi">
+      <span><strong>Ölçüm:</strong> 2026</span>
+      <span><strong>Sonraki Ölçüm:</strong> Ekim 2026</span>
+    </div>
+    <div style="font-size:8px;color:var(--gray2);">🤖 Dijital Raporlama: ChatGPT (OpenAI)</div>
+  </div>
+  <div class="pnum">08</div>
+</div>
+
+</div><!-- /report -->
+</body>
+</html>
