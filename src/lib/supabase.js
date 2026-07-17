@@ -15,8 +15,8 @@ import {
 const supabaseUrl = localStorage.getItem('supabase_url') || import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = localStorage.getItem('supabase_anon_key') || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Force local mode unless 'use_supabase' is explicitly set to 'true' in settings
-export const isSupabaseConfigured = (localStorage.getItem('use_supabase') === 'true') && supabaseUrl && supabaseAnonKey;
+// Use Supabase by default if keys exist, unless explicitly turned off in settings
+export const isSupabaseConfigured = (localStorage.getItem('use_supabase') !== 'false') && supabaseUrl && supabaseAnonKey;
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
