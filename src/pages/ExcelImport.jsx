@@ -282,7 +282,7 @@ async function saveToDatabase(parsedData) {
   if (isSupabaseConfigured) {
     const { data: player, error: playerError } = await supabase
       .from('profiles')
-      .insert({ full_name: parsedData.fullName, role: 'student', birth_date: parsedData.kimlik.birthDate, position: parsedData.position || '1 (Oyun Kurucu)', jersey_number: parsedData.jerseyNumber || 0, status: 'active' })
+      .insert({ id: newPlayerId, full_name: parsedData.fullName, role: 'student', birth_date: parsedData.kimlik.birthDate, position: parsedData.position || '1 (Oyun Kurucu)', category: parsedData.kimlik.category, dominant_hand: parsedData.dominantHand || 'right', bio: '', jersey_number: parsedData.jerseyNumber || 0, status: 'active' })
       .select().single();
     if (playerError) throw playerError;
 
