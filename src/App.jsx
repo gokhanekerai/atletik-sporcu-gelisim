@@ -23,7 +23,13 @@ export default function App() {
 
   useEffect(() => {
     if (isSupabaseConfigured && authState.isAuth) {
+      // Initial sync on login
       syncFromSupabase();
+      // Auto-sync every 30 seconds to pick up changes from other devices
+      const interval = setInterval(() => {
+        syncFromSupabase();
+      }, 30000);
+      return () => clearInterval(interval);
     }
   }, [authState.isAuth]);
 
