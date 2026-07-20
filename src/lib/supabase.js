@@ -201,6 +201,7 @@ export async function syncFromSupabase() {
     const { data: genetics, error: gError } = await supabase.from('genetics').select('*');
     if (!gError && genetics) {
       db.genetics = genetics.map(g => ({
+        _id: g.id,
         playerId: g.player_id,
         fatherHeight: g.father_height,
         motherHeight: g.mother_height,
@@ -214,6 +215,7 @@ export async function syncFromSupabase() {
     const { data: antropometri, error: aError } = await supabase.from('antropometri').select('*');
     if (!aError && antropometri) {
       db.antropometri = antropometri.map(a => ({
+        _id: a.id,
         playerId: a.player_id,
         date: a.date,
         metric: a.metric,
@@ -228,6 +230,7 @@ export async function syncFromSupabase() {
     const { data: skills, error: sError } = await supabase.from('skills').select('*');
     if (!sError && skills) {
       db.skills = skills.map(s => ({
+        _id: s.id,
         playerId: s.player_id,
         name: s.name,
         type: s.type,
@@ -240,6 +243,7 @@ export async function syncFromSupabase() {
     const { data: coachReports, error: cError } = await supabase.from('coach_reports').select('*');
     if (!cError && coachReports) {
       db.coach_reports = coachReports.map(r => ({
+        _id: r.id,
         playerId: r.player_id,
         report: r.report_data
       }));
@@ -249,6 +253,7 @@ export async function syncFromSupabase() {
     const { data: goals, error: goError } = await supabase.from('goals').select('*');
     if (!goError && goals) {
       db.goals = goals.map(g => ({
+        _id: g.id,
         playerId: g.player_id,
         category: g.category,
         title: g.title,
@@ -260,6 +265,7 @@ export async function syncFromSupabase() {
     const { data: physicalMeasurements, error: pmError } = await supabase.from('physical_measurements').select('*');
     if (!pmError && physicalMeasurements) {
       db.physicalMeasurements = physicalMeasurements.map(pm => ({
+        _id: pm.id,
         playerId: pm.player_id,
         date: pm.date,
         heightCm: pm.height_cm,
@@ -274,8 +280,26 @@ export async function syncFromSupabase() {
 
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(db));
     window.dispatchEvent(new Event('auth-changed'));
-    // Push merged data back to Supabase to fill in any fields that were null in cloud (e.g. category)
-    await syncToSupabase(db);
+    // Only push profiles back to cloud (to update missing fields like category)
+    // Do NOT push child tables here - that would cause duplication
+    if (db.profiles && db.profiles.length > 0) {
+      const mappedProfiles = db.profiles.map(p => ({
+        id: p.id,
+        full_name: p.fullName || 'Bilinmeyen',
+        role: p.role || 'student',
+        birth_date: p.birthDate,
+        position: p.position,
+        category: p.category,
+        dominant_hand: p.dominantHand,
+        bio: p.bio,
+        jersey_number: p.jerseyNumber || 0,
+        status: p.status || 'active',
+        avatar_url: p.avatarUrl,
+        email: p.email,
+        password: p.password
+      }));
+      await supabase.from('profiles').upsert(mappedProfiles);
+    }
     console.log('Database synced from Supabase successfully.');
   } catch (err) {
     console.error('Failed to sync database from Supabase:', err);
@@ -310,6 +334,7 @@ export async function syncToSupabase(db) {
     // 2. Sync genetics
     if (db.genetics && db.genetics.length > 0) {
       const mappedGenetics = db.genetics.map(g => ({
+        ...(g._id ? { id: g._id } : {}),
         player_id: g.playerId,
         father_height: g.fatherHeight,
         mother_height: g.motherHeight,
@@ -323,6 +348,7 @@ export async function syncToSupabase(db) {
     // 3. Sync antropometri
     if (db.antropometri && db.antropometri.length > 0) {
       const mappedAntro = db.antropometri.map(a => ({
+        ...(a._id ? { id: a._id } : {}),
         player_id: a.playerId,
         date: a.date,
         metric: a.metric,
@@ -337,6 +363,7 @@ export async function syncToSupabase(db) {
     // 4. Sync skills
     if (db.skills && db.skills.length > 0) {
       const mappedSkills = db.skills.map(s => ({
+        ...(s._id ? { id: s._id } : {}),
         player_id: s.playerId,
         name: s.name,
         type: s.type,
@@ -349,6 +376,7 @@ export async function syncToSupabase(db) {
     // 5. Sync coach reports
     if (db.coach_reports && db.coach_reports.length > 0) {
       const mappedReports = db.coach_reports.map(r => ({
+        ...(r._id ? { id: r._id } : {}),
         player_id: r.playerId,
         report_data: r.report
       }));
@@ -358,6 +386,7 @@ export async function syncToSupabase(db) {
     // 6. Sync goals
     if (db.goals && db.goals.length > 0) {
       const mappedGoals = db.goals.map(g => ({
+        ...(g._id ? { id: g._id } : {}),
         player_id: g.playerId,
         category: g.category,
         title: g.title,
@@ -369,6 +398,7 @@ export async function syncToSupabase(db) {
     // 7. Sync physical measurements (tracking)
     if (db.physicalMeasurements && db.physicalMeasurements.length > 0) {
       const mappedPM = db.physicalMeasurements.map(pm => ({
+        ...(pm._id ? { id: pm._id } : {}),
         player_id: pm.playerId,
         date: pm.date,
         height_cm: pm.heightCm?.toString(),
