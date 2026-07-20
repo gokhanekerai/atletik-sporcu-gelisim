@@ -168,6 +168,15 @@ export default function Players() {
 
     if (isSupabaseConfigured) {
       try {
+        // Delete child records first to prevent FK constraint violations
+        await supabase.from('antropometri').delete().eq('player_id', playerId);
+        await supabase.from('skills').delete().eq('player_id', playerId);
+        await supabase.from('coach_reports').delete().eq('player_id', playerId);
+        await supabase.from('goals').delete().eq('player_id', playerId);
+        await supabase.from('genetics').delete().eq('player_id', playerId);
+        await supabase.from('physical_measurements').delete().eq('player_id', playerId);
+
+        // Delete profile
         const { error } = await supabase.from('profiles').delete().eq('id', playerId);
         if (error) {
           console.error('Supabase delete error:', error);
