@@ -13,11 +13,11 @@ import {
 import seedData from '../data/seed_cinar_caner.json';
 
 // Retrieve keys from LocalStorage (configurable in Settings page) or env
-const supabaseUrl = localStorage.getItem('supabase_url') || import.meta.env.VITE_SUPABASE_URL || 'https://yheubohbighgobsulfhj.supabase.co';
-const supabaseAnonKey = localStorage.getItem('supabase_anon_key') || import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_jnIsUnP1fQqtRuVk6C1ImQ_ELwJc-0c';
+const supabaseUrl = localStorage.getItem('supabase_url') || import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = localStorage.getItem('supabase_anon_key') || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Use Supabase by default if keys exist, unless explicitly turned off in settings
-export const isSupabaseConfigured = (localStorage.getItem('use_supabase') !== 'false') && supabaseUrl && supabaseAnonKey;
+export const isSupabaseConfigured = (localStorage.getItem('use_supabase') !== 'false') && !!(supabaseUrl && supabaseAnonKey);
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
