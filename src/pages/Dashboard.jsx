@@ -19,8 +19,11 @@ export default function Dashboard() {
 
   // Categories count
   const u9Count = players.filter(p => p.category === 'U9/U10').length;
+  const u11Count = players.filter(p => p.category === 'U11').length;
   const u12Count = players.filter(p => p.category === 'U12').length;
   const u14Count = players.filter(p => p.category === 'U14').length;
+  // Dynamic categories that are not in the hardcoded list
+  const otherCategories = [...new Set(players.map(p => p.category).filter(c => c && !['U9/U10', 'U11', 'U12', 'U14'].includes(c)))];
 
   const latestPlayers = [...players].slice(-4).reverse();
 
@@ -118,8 +121,15 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
               { label: 'U9 / U10 Grubu', count: u9Count, pct: totalPlayers > 0 ? (u9Count / totalPlayers) * 100 : 0, color: 'var(--c-primary)' },
+              { label: 'U11 Grubu', count: u11Count, pct: totalPlayers > 0 ? (u11Count / totalPlayers) * 100 : 0, color: '#e67e22' },
               { label: 'U12 Grubu', count: u12Count, pct: totalPlayers > 0 ? (u12Count / totalPlayers) * 100 : 0, color: 'var(--c-accent)' },
               { label: 'U14 Grubu', count: u14Count, pct: totalPlayers > 0 ? (u14Count / totalPlayers) * 100 : 0, color: 'var(--c-purple)' },
+              ...otherCategories.map((cat, i) => ({
+                label: `${cat} Grubu`, 
+                count: players.filter(p => p.category === cat).length, 
+                pct: totalPlayers > 0 ? (players.filter(p => p.category === cat).length / totalPlayers) * 100 : 0, 
+                color: ['#f1c40f', '#e74c3c', '#3498db', '#1abc9c'][i % 4] 
+              }))
             ].map(item => (
               <div key={item.label}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: '0.85rem' }}>

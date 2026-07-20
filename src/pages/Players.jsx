@@ -215,8 +215,12 @@ export default function Players() {
         <select className="filter-select" value={catFilter} onChange={e => setCatFilter(e.target.value)}>
           <option value="all">Tüm Kategoriler</option>
           <option value="U9/U10">U9/U10</option>
+          <option value="U11">U11</option>
           <option value="U12">U12</option>
           <option value="U14">U14</option>
+          {[...new Set(players.map(p => p.category).filter(c => c && !['U9/U10', 'U11', 'U12', 'U14'].includes(c)))].map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
         </select>
 
         <select className="filter-select" value={posFilter} onChange={e => setPosFilter(e.target.value)}>
@@ -407,11 +411,15 @@ export default function Players() {
                   <select 
                     className="form-input" 
                     value={newPlayer.category} 
-                    onChange={e => setNewPlayer({ ...newPlayer, category: e.target.value })}
+                    onChange={e => setNewPlayer({...newPlayer, category: e.target.value})}
                   >
                     <option value="U9/U10">U9/U10</option>
+                    <option value="U11">U11</option>
                     <option value="U12">U12</option>
                     <option value="U14">U14</option>
+                    {[...new Set(players.map(p => p.category).filter(c => c && !['U9/U10', 'U11', 'U12', 'U14'].includes(c)))].map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="form-group">
