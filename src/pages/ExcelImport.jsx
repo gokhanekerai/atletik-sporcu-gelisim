@@ -15,13 +15,13 @@ JSON Şeması:
     "fullName": "Sporcu Ad Soyad",
     "birthDate": "Doğum tarihi GG.AA.YYYY formatında",
     "jerseyNumber": 10,
-    "category": "U9/U10" veya "U12" veya "U14" (Metinde yoksa yaşa göre tahmin et),
-    "position": "1 – Oyun Kurucu", "2 – Şutör Guard", "3 – Kısa Forvet", "4 – Uzun Forvet", "5 – Pivot" değerlerinden biri,
-    "dominantHand": "right" veya "left",
-    "fatherHeight": "Baba boyu örn: 182 cm",
-    "motherHeight": "Anne boyu örn: 170 cm",
+    "category": "U9/U10" veya "U12" veya "U14" (Metinde yoksa yaşa veya doğum yılına göre tahmin et),
+    "position": "1 – Oyun Kurucu", "2 – Şutör Guard", "3 – Kısa Forvet", "4 – Uzun Forvet", "5 – Pivot" değerlerinden biri (Yoksa boyuna veya kategorisine göre en uygun olanı ata),
+    "dominantHand": "right" veya "left" (Belirtilmemişse varsayılan olarak "right" ata),
+    "fatherHeight": "Baba boyu örn: 182 cm" (Belirtilmemişse Türkiye ortalaması olan "178 cm" ata),
+    "motherHeight": "Anne boyu örn: 170 cm" (Belirtilmemişse Türkiye ortalaması olan "165 cm" ata),
     "allergy": "Alerji durumu, yoksa 'Yok'",
-    "geneticNote": "Genetik ve fiziksel potansiyel hakkında yorum",
+    "geneticNote": "Genetik ve fiziksel potansiyel hakkında yorum (Yoksa anne/baba boyuna göre büyüme potansiyeli yorumu yaz)",
     "antropometri": {
       "Boy": { "val2025": 133, "val2026": 135, "comment": "Normal gelişim" },
       "Kilo": { "val2025": 27, "val2026": 30, "comment": "Boy ile uyumlu" },
@@ -46,7 +46,13 @@ JSON Şeması:
   }
 ]
 
-Eğer ham verilerde bazı bilgiler eksikse, o alanları şemaya göre makul varsayılanlarla doldur ya da boş bırak. Beceriler (skills) alanına standart teknik ve taktik becerileri ekleyip durumlarını (status) nötr/orta (🟡) olarak ayarlayabilirsin.
+⚠️ ÖNEMLİ EKSİK VERİ DOLDURMA KURALLARI:
+Eğer ham verilerde bazı bilgiler eksikse, kesinlikle boş ("") veya null bırakma. Aşağıdaki kurallara göre akıllı tahminler yaparak doldur:
+1. **birthDate**: Eksikse, yaş veya kategori bilgisine göre tahmini bir yıl seç ve '01.01.YYYY' formatında ata.
+2. **jerseyNumber**: Eksikse 1-99 arası rastgele boşta olabilecek bir numara ata.
+3. **antropometri (Boy, Kilo, Kulaç vb.)**: Eksikse çocuğun yaşına/kategorisine göre standart gelişim değerlerini baz alarak tahmin et.
+4. **skills**: En az 5-6 adet standart teknik/taktik beceri ekle (örn: Şut Mekaniği, Sağ El Bitirişleri, Savunma Kimliği vb.) ve durumlarını nötr/orta (🟡) veya pozisyona göre (🟢/🔴) ata.
+5. **coachReport**: Alanları boş bırakma, sporcunun profiline ve pozisyonuna uygun profesyonel koç diliyle değerlendirme cümleleri üret.
 
 Dönüştürülecek Ham Sporcu Verileri:
 [Buraya verilerinizi yapıştırın]`;
