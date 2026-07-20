@@ -181,6 +181,9 @@ export async function syncFromSupabase() {
         role: p.role,
         birthDate: p.birth_date,
         position: p.position,
+        category: p.category,
+        dominantHand: p.dominant_hand,
+        bio: p.bio,
         jerseyNumber: p.jersey_number,
         status: p.status,
         avatarUrl: p.avatar_url,
@@ -195,7 +198,7 @@ export async function syncFromSupabase() {
       db.genetics = genetics.map(g => ({
         playerId: g.player_id,
         fatherHeight: g.father_height,
-        mother_height: g.mother_height,
+        motherHeight: g.mother_height,
         targetHeight: g.target_height,
         note: g.genetics_note,
         allergy: g.allergy
@@ -285,6 +288,9 @@ export async function syncToSupabase(db) {
         role: p.role || 'student',
         birth_date: p.birthDate,
         position: p.position,
+        category: p.category,
+        dominant_hand: p.dominantHand,
+        bio: p.bio,
         jersey_number: p.jerseyNumber || 0,
         status: p.status || 'active',
         avatar_url: p.avatarUrl,
