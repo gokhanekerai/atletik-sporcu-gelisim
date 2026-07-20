@@ -15,7 +15,7 @@ JSON Şeması:
     "fullName": "Sporcu Ad Soyad",
     "birthDate": "Doğum tarihi GG.AA.YYYY formatında",
     "jerseyNumber": 10,
-    "category": "U9/U10" veya "U12" veya "U14" (Metinde yoksa yaşa veya doğum yılına göre tahmin et),
+    "category": "U9/U10" veya "U11" veya "U12" veya "U14" (Metinde yoksa yaşa veya doğum yılına göre tahmin et),
     "position": "1 – Oyun Kurucu", "2 – Şutör Guard", "3 – Kısa Forvet", "4 – Uzun Forvet", "5 – Pivot" değerlerinden biri (Yoksa boyuna veya kategorisine göre en uygun olanı ata),
     "dominantHand": "right" veya "left" (Belirtilmemişse varsayılan olarak "right" ata),
     "fatherHeight": "Baba boyu örn: 182 cm" (Belirtilmemişse Türkiye ortalaması olan "178 cm" ata),
@@ -31,7 +31,8 @@ JSON Şeması:
       "Bacak": { "val2025": 78, "val2026": 82, "comment": "Normal" }
     },
     "skills": [
-      { "type": "teknik", "name": "Sol El Gelişimi", "status": "🟢" veya "🟡" veya "🔴", "analysis": "Açıklama" }
+      { "type": "teknik", "name": "Sol El Gelişimi", "status": "🟢" veya "🟡" veya "🔴", "analysis": "Açıklama" },
+      { "type": "taktik", "name": "Yardım Savunması", "status": "🟢" veya "🟡" veya "🔴", "analysis": "Açıklama" }
     ],
     "coachReport": {
       "Genel Sezon Değerlendirmesi": "Koç genel değerlendirme metni",
@@ -50,12 +51,14 @@ JSON Şeması:
 Eğer ham verilerde bazı bilgiler eksikse, kesinlikle boş ("") veya null bırakma. Aşağıdaki kurallara göre akıllı tahminler yaparak doldur:
 1. **birthDate**: Eksikse, yaş veya kategori bilgisine göre tahmini bir yıl seç ve '01.01.YYYY' formatında ata.
 2. **jerseyNumber**: Eksikse 1-99 arası rastgele boşta olabilecek bir numara ata.
-3. **antropometri (Boy, Kilo, Kulaç vb.)**: Eksikse çocuğun yaşına/kategorisine göre standart gelişim değerlerini baz alarak tahmin et.
-4. **skills**: En az 5-6 adet standart teknik/taktik beceri ekle (örn: Şut Mekaniği, Sağ El Bitirişleri, Savunma Kimliği vb.) ve durumlarını nötr/orta (🟡) veya pozisyona göre (🟢/🔴) ata.
+3. **antropometri (Boy, Kilo, vb.)**: Eksikse çocuğun yaşına/kategorisine göre standart gelişim değerlerini baz alarak tahmin et.
+4. **skills**: MUTLAKA şu becerileri dahil et ve 'analysis' (detaylı analiz) kısımlarını çocuğun profiline göre doldur:
+   - Teknik: "Sol El Gelişimi", "Sağ El Bitirişleri", "Şut Mekaniği", "Top Advance", "Skip & Go", "Ball Handling", "Akselerasyon/Deselerasyon"
+   - Taktik/Mental: "Basketbol IQ", "Yardım Savunması", "Liderlik", "Mücadele Gücü", "Temaslı Oyun", "Savunma Kimliği"
 5. **coachReport**: Alanları boş bırakma, sporcunun profiline ve pozisyonuna uygun profesyonel koç diliyle değerlendirme cümleleri üret.
 
 Dönüştürülecek Ham Sporcu Verileri:
-[Buraya verilerinizi yapıştırın]`;
+[Buraya verilerinizi yapıştırın]\`;
 
 function parseExcelFile(file) {
   return new Promise((resolve, reject) => {
@@ -216,8 +219,9 @@ function sanitizeAndHydrate(player) {
   let taktikSkills = player.taktikSkills || [];
   if (Array.isArray(player.skills)) {
     player.skills.forEach(s => {
-      if (s.type === 'teknik') teknikSkills.push(s);
-      else if (s.type === 'taktik') taktikSkills.push(s);
+      const sType = s.type?.toLowerCase() || '';
+      if (sType === 'teknik') teknikSkills.push(s);
+      else if (sType === 'taktik' || sType === 'mental' || sType === 'fiziksel') taktikSkills.push(s);
     });
   }
 
