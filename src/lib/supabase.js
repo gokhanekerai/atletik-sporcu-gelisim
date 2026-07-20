@@ -274,7 +274,6 @@ export async function syncFromSupabase() {
 
 export async function syncToSupabase(db) {
   if (!isSupabaseConfigured) return;
-  if (localStorage.getItem('user_id') === 'admin') return; // Do not sync demo account edits to live DB
   
   console.log('Syncing database updates to Supabase cloud...');
   try {
