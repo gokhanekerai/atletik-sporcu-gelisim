@@ -1,0 +1,307 @@
+{
+  "profiles": [
+    {
+      "id": "cinar_caner_001",
+      "email": "cinarcaner@atletik.com",
+      "password": "10",
+      "fullName": "ÇINAR CANER",
+      "jerseyNumber": 10,
+      "role": "student",
+      "birthDate": "13.10.2017",
+      "category": "U9/U10",
+      "avatarUrl": null,
+      "status": "active",
+      "position": "1 – Oyun Kurucu",
+      "dominantHand": "right"
+    }
+  ],
+  "genetics": [
+    {
+      "playerId": "cinar_caner_001",
+      "fatherHeight": "182 cm",
+      "motherHeight": "175 cm",
+      "targetHeight": "183.5 ± 8 cm",
+      "allergy": "Var, net tanı bulunmuyor",
+      "note": "Anne ve baba boy ortalaması yüksek atletik potansiyele işaret etmektedir. Uzun dönem takip önerilir."
+    }
+  ],
+  "antropometri": [
+    {
+      "playerId": "cinar_caner_001",
+      "date": "2026-07-17",
+      "metric": "Boy",
+      "val2025": 133,
+      "val2026": 135,
+      "change": "+2",
+      "comment": "Normal gelişim, genetik potansiyel yüksektir."
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "date": "2026-07-17",
+      "metric": "Kilo",
+      "val2025": 27,
+      "val2026": 30,
+      "change": "+3",
+      "comment": "Boy ile uyumlu artış."
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "date": "2026-07-17",
+      "metric": "Kulaç",
+      "val2025": "50*",
+      "val2026": 139,
+      "change": "-",
+      "comment": "2025 ölçüm hatası, 2026 referans."
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "date": "2026-07-17",
+      "metric": "Bel",
+      "val2025": "23*",
+      "val2026": 65,
+      "change": "-",
+      "comment": "2025 ölçüm hatası, 2026 referans."
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "date": "2026-07-17",
+      "metric": "Omuz",
+      "val2025": "12*",
+      "val2026": 35,
+      "change": "-",
+      "comment": "2025 ölçüm hatası, 2026 referans."
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "date": "2026-07-17",
+      "metric": "Bacak",
+      "val2025": 75,
+      "val2026": 82,
+      "change": "+7",
+      "comment": "Olumlu alt ekstremite gelişimi."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Sol El Gelişimi",
+      "status": "🟡",
+      "analysis": "Sezonun ikinci yarısında belirgin gelişim göstermiştir ancak hâlâ ana gelişim alanlarından biridir.",
+      "playerId": "cinar_caner_001",
+      "type": "teknik"
+    },
+    {
+      "name": "Sağ El Bitirişleri",
+      "status": "🟢",
+      "analysis": "Sağ el bitiriş repertuvarı sezon boyunca istikrarlı şekilde gelişmiştir.",
+      "playerId": "cinar_caner_001",
+      "type": "teknik"
+    },
+    {
+      "name": "Şut Mekaniği",
+      "status": "🟡",
+      "analysis": "Orta seviyededir. Tekrar ve özgüvenle birlikte gelişmesi beklenmektedir.",
+      "playerId": "cinar_caner_001",
+      "type": "teknik"
+    },
+    {
+      "name": "Top Advance",
+      "status": "🟢",
+      "analysis": "Sorumluluk alarak topu karşı sahaya taşımaktadır ancak daha kaliteli kararlarla bunu geliştirmelidir.",
+      "playerId": "cinar_caner_001",
+      "type": "teknik"
+    },
+    {
+      "name": "Skip & Go",
+      "status": "🟢",
+      "analysis": "Yaş grubuna göre iyi seviyede kullanılmaktadır.",
+      "playerId": "cinar_caner_001",
+      "type": "teknik"
+    },
+    {
+      "name": "Ball Handling",
+      "status": "🟡",
+      "analysis": "Özellikle sol el ve yön değiştirmelerde ek bireysel çalışma önerilir.",
+      "playerId": "cinar_caner_001",
+      "type": "teknik"
+    },
+    {
+      "name": "Akselerasyon/Deselerasyon",
+      "status": "🟢",
+      "analysis": "Hız değişimlerini ve tempo kontrolünü etkili kullanabilmektedir.",
+      "playerId": "cinar_caner_001",
+      "type": "teknik"
+    },
+    {
+      "name": "Basketbol IQ",
+      "status": "🟢",
+      "analysis": "Oyun okuma ve çözüm üretme konusunda takımın öne çıkan oyuncularındandır.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Yardım Savunması",
+      "status": "🟢",
+      "analysis": "2v1 ve yardım savunmalarında doğru kararlar verebilmektedir.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Liderlik",
+      "status": "🟢",
+      "analysis": "Takım arkadaşlarını konuşarak yönlendiren doğal bir saha içi lideridir.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Mücadele Gücü",
+      "status": "🟢",
+      "analysis": "Kaybetmekten hoşlanmayan ve son ana kadar mücadele eden karaktere sahiptir.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Temaslı Oyun",
+      "status": "🟢",
+      "analysis": "Teması seven ve fiziksel oyundan kaçmayan bir profildir.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Savunma Kimliği",
+      "status": "🟢",
+      "analysis": "Sezon boyunca skordan çok savunması ve enerjisiyle öne çıkmıştır.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Motivasyon",
+      "status": "🟢",
+      "analysis": "Antrenman ve maçlarda motivasyonu yüksek.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Odaklanma",
+      "status": "🟢",
+      "analysis": "Antrenman ve maçlarda odağı çok iyi.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Özgüven",
+      "status": "🟢",
+      "analysis": "Kendine güveni yüksek, zorlu durumlarda paniğe kapılmaz.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Başarısızlıkla Baş Çıkma",
+      "status": "🟢",
+      "analysis": "Özgün olduğunda takımını toparlayan biri olabiliyor.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    },
+    {
+      "name": "Disiplin",
+      "status": "🟢",
+      "analysis": "Kurallara uyumlu, disiplinli bir sporcu.",
+      "playerId": "cinar_caner_001",
+      "type": "taktik"
+    }
+  ],
+  "coach_reports": [
+    {
+      "playerId": "cinar_caner_001",
+      "report": {
+        "Genel Sezon Değerlendirmesi": "Çınar Caner sezon boyunca skor üretiminden çok savunması, mücadelesi ve pes etmeyen yapısıyla ön plana çıkmıştır.",
+        "Teknik ve Oyun Kimliği": "Basketbol IQ’su yüksek, oyunu paylaşmayı seven ve doğru yerde topu advance eden bir oyuncudur. Sol el gelişimi sezonun ikinci yarısında ivme kazanmıştır.",
+        "Liderlik ve Takım Kültürü": "Takım arkadaşlarını saha içinde yönlendirerek liderlik etmektedir. İletişimi güçlü ve takım odaklıdır.",
+        "Mental Profil": "Kaybetmekten hoşlanmayan yapısı ve mücadele gücü en önemli özelliklerindendir. Her top için savaşması nedeniyle sezon boyunca maç sonlarında ayak tabanlarında deri soyulmaları yaşamasına rağmen mücadeleden vazgeçmemiştir.",
+        "Gelecek Sezon Beklentisi": "Sol el kullanımını, şut istikrarını ve topu daha kaliteli taşıyabilme becerisini geliştirdiğinde takım üzerindeki etkisi daha da artacaktır. Daha güzel sezonlarda birlikte gelişmek dileğiyle."
+      }
+    }
+  ],
+  "goals": [
+    {
+      "playerId": "cinar_caner_001",
+      "category": "Teknik",
+      "title": "Sol el, şut istikrarı, ball handling",
+      "status": "active"
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "category": "Taktik",
+      "title": "Daha kaliteli bir şekilde topu karşı sahaya taşıma",
+      "status": "active"
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "category": "Mental",
+      "title": "Liderlik ve mücadele kimliğini koruma",
+      "status": "active"
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "category": "Fiziksel",
+      "title": "Temaslı oyunu sürdürürken ayak sağlığı ve toparlanma",
+      "status": "active"
+    }
+  ],
+  "physicalMeasurements": [
+    {
+      "playerId": "cinar_caner_001",
+      "date": "30.06.2026",
+      "heightCm": "135",
+      "weightKg": "30",
+      "kulac": "139",
+      "bel": "65",
+      "omuz": "35",
+      "bacak": "82",
+      "note": "Başlangıç ölçümü"
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "date": "30.09.2026",
+      "heightCm": "",
+      "weightKg": "",
+      "kulac": "",
+      "bel": "",
+      "omuz": "",
+      "bacak": "",
+      "note": ""
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "date": "30.12.2026",
+      "heightCm": "",
+      "weightKg": "",
+      "kulac": "",
+      "bel": "",
+      "omuz": "",
+      "bacak": "",
+      "note": ""
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "date": "30.03.2027",
+      "heightCm": "",
+      "weightKg": "",
+      "kulac": "",
+      "bel": "",
+      "omuz": "",
+      "bacak": "",
+      "note": ""
+    },
+    {
+      "playerId": "cinar_caner_001",
+      "date": "30.06.2027",
+      "heightCm": "",
+      "weightKg": "",
+      "kulac": "",
+      "bel": "",
+      "omuz": "",
+      "bacak": "",
+      "note": ""
+    }
+  ]
+}

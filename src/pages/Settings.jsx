@@ -224,7 +224,7 @@ export default function Settings() {
         }}>
           <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>🏀</div>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--c-primary)', marginBottom: 4 }}>
-            BasketTrack v1.0
+            ATLETİKPLUS v1.0
           </div>
           <div>Basketbol Kulübü Sporcu Gelişim Takip Sistemi</div>
           <div style={{ marginTop: 4, opacity: 0.6 }}>© 2026 · Tüm hakları saklıdır</div>

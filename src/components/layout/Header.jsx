@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, Menu } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const routeTitles = {
@@ -12,7 +12,7 @@ const routeTitles = {
   '/settings': 'settings',
 };
 
-export default function Header() {
+export default function Header({ onMenuClick }) {
   const { t, i18n } = useTranslation();
   const location = useLocation();
 
@@ -29,6 +29,10 @@ export default function Header() {
 
   return (
     <header className="top-header">
+      <button className="mobile-menu-btn" onClick={onMenuClick} title="Menü">
+        <Menu size={20} />
+      </button>
+
       <div className="header-breadcrumb">
         <h2>{t(`nav.${routeTitles[pageKey]}`)}</h2>
       </div>
@@ -72,7 +76,8 @@ export default function Header() {
           onClick={() => {
             localStorage.removeItem('user_role');
             localStorage.removeItem('user_id');
-            window.location.href = '/login';
+            window.dispatchEvent(new Event('auth-changed'));
+            window.location.href = '/';
           }}
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
           title="Çıkış Yap"

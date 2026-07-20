@@ -1,48 +1,140 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Target, Activity, Ruler, Calendar, Key, Shield, User, Camera } from 'lucide-react';
-import {
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, LineChart, Line, Legend
-} from 'recharts';
+import { 
+  ArrowLeft, Target, Shield, Key, Camera, Ruler, 
+  Save, Plus, Trash2, FileText, Heart, Activity
+} from 'lucide-react';
 import { localDb } from '../lib/supabase';
 
-
-const initials = name => name.split(' ').map(n => n[0]).join('').slice(0, 2);
-
-const tabs = [
-  { key: 'stats', label: 'İstatistikler', icon: Activity },
-  { key: 'physical', label: 'Fiziksel Gelişim', icon: Ruler },
-  { key: 'goals', label: 'Hedefler', icon: Target },
-  { key: 'attendance', label: 'Devam', icon: Calendar },
-];
+const initials = name => name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
 
 export default function PlayerDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('stats');
   
-  // State for password and image editing
-  const [passwordState, setPasswordState] = useState('');
-  const [saveStatus, setSaveStatus] = useState('');
-
   const userRole = localStorage.getItem('user_role') || 'admin';
+  const effectivePlayerId = id || '';
 
+  // Get raw DB state
   const db = localDb.get();
   const playersList = db.profiles || [];
-  const teamsList = db.teams || [];
-  const matchesList = db.matches || [];
-  const matchStatsList = db.matchStats || [];
-  const physicalMeasurementsList = db.physicalMeasurements || [];
-  const goalsList = db.goals || [];
-  const attendanceList = db.attendance || [];
-  const trainingSessionsList = db.trainingSessions || [];
+  const player = playersList.find(p => p.id?.toString() === effectivePlayerId);
 
-  const player = playersList.find(p => p.id === id || p.id === parseInt(id)?.toString());
-  
+  // Tab configurations
+  const adminTabs = [
+    { key: 'report', label: 'Önizleme Raporu', icon: Shield },
+    { key: 'edit-1', label: '1. Kimlik & Genetik', icon: Shield },
+    { key: 'edit-2', label: '2. Antropometri', icon: Ruler },
+    { key: 'edit-3', label: '3. Teknik Analiz', icon: Activity },
+    { key: 'edit-4', label: '4. Taktik & Mental', icon: Heart },
+    { key: 'edit-5', label: '5. Coach Report', icon: FileText },
+    { key: 'edit-6', label: '6. Takip & Hedefler', icon: Target }
+  ];
+
+  const studentTabs = [
+    { key: 'report', label: 'Sporcu Raporu', icon: Shield },
+    { key: 'goals', label: 'Hedefler', icon: Target }
+  ];
+
+  const tabs = userRole === 'admin' ? adminTabs : studentTabs;
+  const [activeTab, setActiveTab] = useState('report');
+  const [saveStatus, setSaveStatus] = useState('');
+
+  // Password & Photo States
+  const [passwordState, setPasswordState] = useState('');
+
+  // Edit Forms States
+  const [profileForm, setProfileForm] = useState({
+    fullName: '',
+    birthDate: '',
+    category: '',
+    jerseyNumber: '',
+    dominantHand: 'right',
+    position: '',
+    bio: '',
+    status: 'active'
+  });
+
+  const [geneticsForm, setGeneticsForm] = useState({
+    fatherHeight: '',
+    motherHeight: '',
+    targetHeight: '',
+    allergy: '',
+    note: ''
+  });
+
+  const [antroForm, setAntroForm] = useState([]);
+  const [teknikForm, setTeknikForm] = useState([]);
+  const [taktikForm, setTaktikForm] = useState([]);
+  const [coachForm, setCoachForm] = useState({
+    'Genel Sezon Değerlendirmesi': '',
+    'Teknik ve Oyun Kimliği': '',
+    'Liderlik ve Takım Kültürü': '',
+    'Mental Profil': '',
+    'Gelecek Sezon Beklentisi': ''
+  });
+  const [goalsForm, setGoalsForm] = useState([]);
+  const [trackingForm, setTrackingForm] = useState([]);
+
+  // Initialize/Sync Form States when Player or Tab changes
+  useEffect(() => {
+    if (!player) return;
+
+    const freshDb = localDb.get();
+    
+    // Profiles
+    setProfileForm({
+      fullName: player.fullName || '',
+      birthDate: player.birthDate || '',
+      category: player.category || '',
+      jerseyNumber: player.jerseyNumber || '',
+      dominantHand: player.dominantHand || 'right',
+      position: player.position || '',
+      bio: player.bio || '',
+      status: player.status || 'active'
+    });
+
+    // Genetics
+    const genetics = (freshDb.genetics || []).find(g => g.playerId?.toString() === effectivePlayerId);
+    setGeneticsForm({
+      fatherHeight: genetics?.fatherHeight || '',
+      motherHeight: genetics?.motherHeight || '',
+      targetHeight: genetics?.targetHeight || '',
+      allergy: genetics?.allergy || '',
+      note: genetics?.note || ''
+    });
+
+    // Antropometri - Always ensure all 6 default metrics are present and in order
+    const antro = (freshDb.antropometri || []).filter(m => m.playerId?.toString() === effectivePlayerId);
+    const defaultMetrics = ['Boy', 'Kilo', 'Kulaç', 'Bel', 'Omuz', 'Bacak'];
+    const mergedAntro = defaultMetrics.map(metricName => {
+      const existing = antro.find(m => m.metric?.toLowerCase() === metricName.toLowerCase());
+      return existing ? { ...existing } : { metric: metricName, val2025: '', val2026: '', change: '', comment: '' };
+    });
+    setAntroForm(mergedAntro);
+
+    // Skills
+    const skills = (freshDb.skills || []).filter(s => s.playerId?.toString() === effectivePlayerId);
+    setTeknikForm(skills.filter(s => s.type === 'teknik'));
+    setTaktikForm(skills.filter(s => s.type === 'taktik'));
+
+    // Coach Report
+    const coachReport = (freshDb.coach_reports || []).find(r => r.playerId?.toString() === effectivePlayerId);
+    setCoachForm({
+      'Genel Sezon Değerlendirmesi': coachReport?.report?.['Genel Sezon Değerlendirmesi'] || '',
+      'Teknik ve Oyun Kimliği': coachReport?.report?.['Teknik ve Oyun Kimliği'] || '',
+      'Liderlik ve Takım Kültürü': coachReport?.report?.['Liderlik ve Takım Kültürü'] || '',
+      'Mental Profil': coachReport?.report?.['Mental Profil'] || '',
+      'Gelecek Sezon Beklentisi': coachReport?.report?.['Gelecek Sezon Beklentisi'] || ''
+    });
+
+    // Goals & Tracking (Takip)
+    setGoalsForm((freshDb.goals || []).filter(g => g.playerId?.toString() === effectivePlayerId));
+    setTrackingForm((freshDb.physicalMeasurements || []).filter(m => m.playerId?.toString() === effectivePlayerId));
+  }, [effectivePlayerId, activeTab]);
+
   if (!player) return (
     <div className="empty-state">
       <div className="empty-state-icon">🏀</div>
@@ -53,73 +145,157 @@ export default function PlayerDetail() {
     </div>
   );
 
-  const team = teamsList.find(t => t.id === player.teamId);
-
-  // Dynamic player stats calculation
-  const getPlayerStatsDynamic = (pId) => {
-    const stats = matchStatsList.filter(s => s.playerId === parseInt(pId) || s.playerId === pId);
-    if (!stats.length) return null;
-    const n = stats.length;
-    return {
-      gamesPlayed: n,
-      ppg: (stats.reduce((a, s) => a + s.points, 0) / n).toFixed(1),
-      rpg: (stats.reduce((a, s) => a + s.rebounds, 0) / n).toFixed(1),
-      apg: (stats.reduce((a, s) => a + s.assists, 0) / n).toFixed(1),
-      spg: (stats.reduce((a, s) => a + s.steals, 0) / n).toFixed(1),
-      bpg: (stats.reduce((a, s) => a + s.blocks, 0) / n).toFixed(1),
-      fgPct: stats.reduce((a, s) => a + s.fgAttempted, 0) > 0
-        ? ((stats.reduce((a, s) => a + s.fgMade, 0) / stats.reduce((a, s) => a + s.fgAttempted, 0)) * 100).toFixed(1)
-        : '0.0',
-      threePct: stats.reduce((a, s) => a + s.threeAttempted, 0) > 0
-        ? ((stats.reduce((a, s) => a + s.threeMade, 0) / stats.reduce((a, s) => a + s.threeAttempted, 0)) * 100).toFixed(1)
-        : '0.0',
-      mpg: (stats.reduce((a, s) => a + s.minutesPlayed, 0) / n).toFixed(1),
-    };
+  // SAVE HANDLERS FOR EACH OF THE 6 SHEETS
+  const saveDb = (updatedDb, message) => {
+    localDb.set(updatedDb);
+    setSaveStatus(message);
+    setTimeout(() => setSaveStatus(''), 3000);
   };
 
-  const stats = getPlayerStatsDynamic(player.id);
-  const playerMatches = matchStatsList.filter(s => s.playerId?.toString() === player.id?.toString());
-  
-  const physicalData = (db.physicalMeasurements || [])
-    .concat(db.antropometri || [])
-    .filter(m => m.playerId?.toString() === player.id?.toString())
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  // 1. Kimlik & Genetik
+  const handleSaveKimlikGenetik = () => {
+    const currentDb = localDb.get();
     
-  const playerGoals = (db.goals || [])
-    .filter(g => g.playerId?.toString() === player.id?.toString());
-    
-  const playerAttendance = attendanceList.filter(a => a.playerId?.toString() === player.id?.toString());
+    // Update profiles
+    const pIdx = currentDb.profiles.findIndex(p => p.id?.toString() === effectivePlayerId);
+    if (pIdx !== -1) {
+      currentDb.profiles[pIdx] = {
+        ...currentDb.profiles[pIdx],
+        ...profileForm,
+        jerseyNumber: parseInt(profileForm.jerseyNumber) || 0
+      };
+    }
 
+    // Update genetics
+    const gIdx = currentDb.genetics.findIndex(g => g.playerId?.toString() === effectivePlayerId);
+    const newGenetics = { playerId: effectivePlayerId, ...geneticsForm };
+    if (gIdx !== -1) {
+      currentDb.genetics[gIdx] = newGenetics;
+    } else {
+      currentDb.genetics.push(newGenetics);
+    }
+
+    saveDb(currentDb, 'Kimlik ve Genetik bilgileri kaydedildi!');
+  };
+
+  // 2. Antropometri
+  const handleSaveAntropometri = () => {
+    const currentDb = localDb.get();
+    
+    // Clean old antro entries for player
+    currentDb.antropometri = (currentDb.antropometri || []).filter(m => m.playerId?.toString() !== effectivePlayerId);
+    
+    // Insert updated records
+    antroForm.forEach(item => {
+      if (item.metric) {
+        currentDb.antropometri.push({
+          playerId: effectivePlayerId,
+          date: new Date().toISOString().split('T')[0],
+          ...item
+        });
+      }
+    });
+
+    saveDb(currentDb, 'Antropometri ölçümleri kaydedildi!');
+  };
+
+  // 3. Teknik Analiz
+  const handleSaveTeknikAnaliz = () => {
+    const currentDb = localDb.get();
+    
+    // Clean old teknik skills for player
+    currentDb.skills = (currentDb.skills || []).filter(s => !(s.playerId?.toString() === effectivePlayerId && s.type === 'teknik'));
+    
+    // Insert updated records
+    teknikForm.forEach(item => {
+      if (item.name) {
+        currentDb.skills.push({
+          playerId: effectivePlayerId,
+          type: 'teknik',
+          ...item
+        });
+      }
+    });
+
+    saveDb(currentDb, 'Teknik Analiz becerileri kaydedildi!');
+  };
+
+  // 4. Taktik & Mental
+  const handleSaveTaktikMental = () => {
+    const currentDb = localDb.get();
+    
+    // Clean old taktik skills for player
+    currentDb.skills = (currentDb.skills || []).filter(s => !(s.playerId?.toString() === effectivePlayerId && s.type === 'taktik'));
+    
+    // Insert updated records
+    taktikForm.forEach(item => {
+      if (item.name) {
+        currentDb.skills.push({
+          playerId: effectivePlayerId,
+          type: 'taktik',
+          ...item
+        });
+      }
+    });
+
+    saveDb(currentDb, 'Taktik & Mental analiz bilgileri kaydedildi!');
+  };
+
+  // 5. Coach Report
+  const handleSaveCoachReport = () => {
+    const currentDb = localDb.get();
+    
+    const reportIndex = currentDb.coach_reports.findIndex(r => r.playerId?.toString() === effectivePlayerId);
+    const newReport = {
+      playerId: effectivePlayerId,
+      report: { ...coachForm }
+    };
+
+    if (reportIndex !== -1) {
+      currentDb.coach_reports[reportIndex] = newReport;
+    } else {
+      currentDb.coach_reports.push(newReport);
+    }
+
+    saveDb(currentDb, 'Antrenör raporu başarıyla kaydedildi!');
+  };
+
+  // 6. Takip & Hedefler
+  const handleSaveTakipHedefler = () => {
+    const currentDb = localDb.get();
+    
+    // Save goals
+    currentDb.goals = (currentDb.goals || []).filter(g => g.playerId?.toString() !== effectivePlayerId);
+    goalsForm.forEach(g => {
+      if (g.title) {
+        currentDb.goals.push({
+          playerId: effectivePlayerId,
+          ...g
+        });
+      }
+    });
+
+    // Save quarterly tracking records
+    currentDb.physicalMeasurements = (currentDb.physicalMeasurements || []).filter(m => m.playerId?.toString() !== effectivePlayerId);
+    trackingForm.forEach(m => {
+      if (m.date) {
+        currentDb.physicalMeasurements.push({
+          playerId: effectivePlayerId,
+          ...m
+        });
+      }
+    });
+
+    saveDb(currentDb, 'Takip Hedefleri ve Ölçüm Takvimi kaydedildi!');
+  };
+
+  // Helper lists & displays
   const getAge = (birthDate) => {
     if (!birthDate) return '—';
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    if (today.getMonth() - birth.getMonth() < 0 ||
-      (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
-    return age;
+    const birthYear = parseInt(birthDate.split('.')[2]);
+    if (isNaN(birthYear)) return '—';
+    return new Date().getFullYear() - birthYear;
   };
-
-  // Radar data
-  const radarData = stats ? [
-    { subject: 'Sayı', val: Math.min(parseFloat(stats.ppg) * 4, 100) },
-    { subject: 'Ribaund', val: Math.min(parseFloat(stats.rpg) * 8, 100) },
-    { subject: 'Asist', val: Math.min(parseFloat(stats.apg) * 10, 100) },
-    { subject: 'Savunma', val: Math.min((parseFloat(stats.spg) + parseFloat(stats.bpg)) * 15, 100) },
-    { subject: 'Verimlilik', val: Math.min(parseFloat(stats.fgPct) * 1.4, 100) },
-    { subject: 'Dakika', val: Math.min(parseFloat(stats.mpg) * 2.5, 100) },
-  ] : [];
-
-  // Match-by-match
-  const matchTrend = playerMatches.map(s => {
-    const m = matchesList.find(m => m.id === s.matchId);
-    return {
-      game: m?.opponent?.split(' ')[0] || `Maç ${s.matchId}`,
-      sayı: s.points,
-      ribaund: s.rebounds,
-      asist: s.assists,
-    };
-  });
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
@@ -128,7 +304,7 @@ export default function PlayerDetail() {
       reader.onloadend = () => {
         const dbCurrent = localDb.get();
         const profiles = dbCurrent.profiles || [];
-        const index = profiles.findIndex(p => p.id === player.id);
+        const index = profiles.findIndex(p => p.id?.toString() === effectivePlayerId);
         if (index !== -1) {
           profiles[index].avatarUrl = reader.result;
           localDb.set(dbCurrent);
@@ -144,7 +320,7 @@ export default function PlayerDetail() {
     if (!passwordState) return;
     const dbCurrent = localDb.get();
     const profiles = dbCurrent.profiles || [];
-    const index = profiles.findIndex(p => p.id === player.id);
+    const index = profiles.findIndex(p => p.id?.toString() === effectivePlayerId);
     if (index !== -1) {
       profiles[index].password = passwordState;
       localDb.set(dbCurrent);
@@ -153,28 +329,9 @@ export default function PlayerDetail() {
     }
   };
 
-  const attendanceRate = playerAttendance.length > 0
-    ? Math.round((playerAttendance.filter(a => a.present).length / playerAttendance.length) * 100)
-    : 0;
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div style={{
-        background: 'var(--c-surface-2)', border: '1px solid var(--c-border-2)',
-        borderRadius: 'var(--r-md)', padding: '10px 14px', fontSize: '0.8rem'
-      }}>
-        <p style={{ color: 'var(--c-text)', fontWeight: 700, marginBottom: 4 }}>{label}</p>
-        {payload.map(p => (
-          <p key={p.dataKey} style={{ color: p.color }}>{p.name}: {p.value}</p>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div>
-      {/* Back & SignOut feedback */}
+      {/* HEADER ACTION AREA */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
         {userRole === 'admin' ? (
           <button className="btn btn-ghost btn-sm" onClick={() => navigate('/players')}
@@ -190,32 +347,25 @@ export default function PlayerDetail() {
             color: 'var(--c-green)',
             borderRadius: 'var(--r-md)',
             padding: '6px 12px',
-            fontSize: '0.75rem'
+            fontSize: '0.75rem',
+            fontWeight: 600
           }}>{saveStatus}</div>
         )}
       </div>
 
-      {/* Profile Hero */}
+      {/* QUICK HERO SUMMARY HEADER */}
       <div style={{
         background: 'linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-2) 100%)',
         border: '1px solid var(--c-border)',
         borderRadius: 'var(--r-xl)',
-        padding: 'var(--space-8)',
+        padding: 'var(--space-6)',
         marginBottom: 'var(--space-6)',
         position: 'relative',
         overflow: 'hidden',
       }}>
-        <div style={{
-          position: 'absolute', top: -30, right: -10,
-          fontFamily: 'var(--font-display)', fontWeight: 900,
-          fontSize: 150, color: 'rgba(255,107,53,0.05)', lineHeight: 1,
-          userSelect: 'none',
-        }}>#{player.jerseyNumber}</div>
-
-        <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start', position: 'relative', zIndex: 1, flexWrap: 'wrap' }}>
-          {/* Avatar Container with local file upload triggers */}
+        <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative' }}>
-            <div className="avatar avatar-2xl" style={{ 
+            <div className="avatar avatar-xl" style={{ 
               boxShadow: 'var(--shadow-orange)',
               overflow: 'hidden',
               background: player.avatarUrl ? `url(${player.avatarUrl}) center/cover no-repeat` : 'var(--c-surface-3)'
@@ -227,379 +377,829 @@ export default function PlayerDetail() {
               <label style={{
                 position: 'absolute', bottom: -5, right: -5,
                 background: 'var(--c-primary)', color: 'white',
-                width: 32, height: 32, borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 28, height: 28, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifycontent: 'center',
                 cursor: 'pointer', border: '2px solid var(--c-surface)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                alignItems: 'center', justifyContent: 'center'
               }}>
-                <Camera size={14} />
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handlePhotoUpload} 
-                  style={{ display: 'none' }}
-                />
+                <Camera size={12} />
+                <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
               </label>
             )}
           </div>
 
           <div style={{ flex: 1, minWidth: 240 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)', flexWrap: 'wrap' }}>
-              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 900 }}>
-                {player.fullName}
-              </h1>
-              <div className={`pos-chip pos-${player.position}`} style={{ width: 'auto', padding: '4px 10px', fontSize: '0.8rem' }}>
-                {player.position}
-              </div>
-              <div className={`badge badge-${player.status === 'active' ? 'green' : 'red'}`}>
-                {player.status === 'active' ? '● Aktif' : '⚠ Sakatlanmış'}
-              </div>
-            </div>
-            <p style={{ color: 'var(--c-text-2)', marginBottom: 'var(--space-5)', fontSize: '0.9rem' }}>
-              {player.bio}
-            </p>
-
-
-            {/* Bio Grid */}
-            <div style={{ display: 'flex', gap: 'var(--space-8)', flexWrap: 'wrap' }}>
-              {[
-                { label: 'Takım', val: team?.name },
-                { label: 'Yaş', val: `${getAge(player.birthDate)} yaş` },
-                { label: 'Boy', val: `${player.heightCm} cm` },
-                { label: 'Kilo', val: `${player.weightKg} kg` },
-                { label: 'El', val: player.dominantHand === 'right' ? 'Sağ' : 'Sol' },
-                { label: 'Forma', val: `#${player.jerseyNumber}` },
-              ].map(item => (
-                <div key={item.label}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{item.label}</div>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--c-text)' }}>{item.val}</div>
-                </div>
-              ))}
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 900, marginBottom: 4 }}>
+              {player.fullName}
+            </h1>
+            <div style={{ display: 'flex', gap: 16, fontSize: '0.8rem', color: 'var(--c-text-2)', flexWrap: 'wrap' }}>
+              <span>👕 Forma: #{player.jerseyNumber || '—'}</span>
+              <span>📌 Pozisyon: {player.position || '—'}</span>
+              <span>🎂 Yaş: {getAge(player.birthDate)}</span>
+              <span>📊 Kategori: {player.category || '—'}</span>
             </div>
           </div>
 
-          {/* Quick Stats */}
-          {stats && (
-            <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)',
-              background: 'var(--c-surface-3)', borderRadius: 'var(--r-lg)',
-              padding: 'var(--space-4)', minWidth: 220,
-            }}>
-              {[
-                { val: stats.ppg, lbl: 'PPG', color: 'var(--c-primary)' },
-                { val: stats.rpg, lbl: 'RPG', color: 'var(--c-accent)' },
-                { val: stats.apg, lbl: 'APG', color: 'var(--c-purple)' },
-                { val: stats.fgPct + '%', lbl: 'FG%', color: 'var(--c-yellow)' },
-                { val: stats.threePct + '%', lbl: '3P%', color: 'var(--c-green)' },
-                { val: stats.gamesPlayed, lbl: 'Maç', color: 'var(--c-text-2)' },
-              ].map(s => (
-                <div key={s.lbl} style={{ textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, color: s.color }}>{s.val}</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--c-text-3)' }}>{s.lbl}</div>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Admin Credentials Panel */}
           {userRole === 'admin' && (
             <div style={{
-              background: 'var(--c-surface-3)', borderRadius: 'var(--r-lg)',
-              padding: 'var(--space-4)', minWidth: 220,
-              display: 'flex', flexDirection: 'column', gap: 10,
-              border: '1px solid rgba(255,255,255,0.04)'
+              background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)',
+              padding: '10px 14px', border: '1px solid rgba(255,255,255,0.03)',
+              display: 'flex', gap: 8, alignItems: 'center'
             }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--c-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Key size={12} /> Öğrenci Giriş Bilgileri
+              <div style={{ fontSize: '0.75rem' }}>
+                <div style={{ color: 'var(--c-text-3)' }}>Şifre:</div>
+                <input 
+                  type="text" 
+                  style={{ background: 'var(--c-surface-2)', padding: '4px 8px', fontSize: '0.75rem', width: 70, border: '1px solid var(--c-border)' }}
+                  placeholder={player.password || '10'}
+                  value={passwordState}
+                  onChange={e => setPasswordState(e.target.value)}
+                />
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--c-text-3)' }}>
-                E-posta: <strong style={{ color: 'var(--c-text-2)' }}>{player.email}</strong>
-              </div>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '0.65rem' }}>Öğrenci Giriş Şifresi</label>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <input 
-                    type="text" 
-                    placeholder={player.password || 'Şifre girin'} 
-                    value={passwordState}
-                    onChange={e => setPasswordState(e.target.value)}
-                    style={{ padding: '6px 10px', fontSize: '0.8rem', background: 'var(--c-surface-2)' }}
-                  />
-                  <button 
-                    onClick={handleUpdatePassword}
-                    className="btn btn-primary"
-                    style={{ padding: '6px 12px', fontSize: '0.75rem' }}
-                  >
-                    Güncelle
-                  </button>
-                </div>
-              </div>
+              <button className="btn btn-primary btn-sm" style={{ padding: '6px 10px', height: 'fit-content' }} onClick={handleUpdatePassword}>Güncelle</button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="tabs">
+      {/* TABS CONTAINER */}
+      <div className="tabs" style={{ marginBottom: 'var(--space-6)', overflowX: 'auto', display: 'flex', flexWrap: 'nowrap' }}>
         {tabs.map(tab => (
           <button
             key={tab.key}
             className={`tab-btn${activeTab === tab.key ? ' active' : ''}`}
             onClick={() => setActiveTab(tab.key)}
+            style={{ whiteSpace: 'nowrap' }}
           >
-            <tab.icon size={15} /> {tab.label}
+            <tab.icon size={14} style={{ marginRight: 6 }} /> {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Tab Content: Stats */}
-      {activeTab === 'stats' && (
+      {/* ========================================================
+          TAB 1: ÖNİZLEME RAPORU / REPORT PREVIEW 
+          ======================================================== */}
+      {activeTab === 'report' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-          <div className="grid-2">
-            {/* Radar */}
+          {/* Kimlik & Genetik Box */}
+          {geneticsForm && (
             <div className="card">
-              <div className="card-header">
-                <div className="card-title">Yetenek Haritası</div>
-              </div>
-              {radarData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={260}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="rgba(255,255,255,0.08)" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--c-text-3)', fontSize: 11 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar name={player.fullName} dataKey="val"
-                      stroke="#FF6B35" fill="#FF6B35" fillOpacity={0.2} strokeWidth={2} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              ) : <div className="empty-state"><p>Veri yok</p></div>}
-            </div>
-
-            {/* Stat Details */}
-            <div className="card">
-              <div className="card-header">
-                <div className="card-title">Detaylı İstatistikler</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--c-text-3)' }}>{stats?.gamesPlayed} maç ortalaması</div>
-              </div>
-              {stats ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                  {[
-                    { label: 'Sayı', val: stats.ppg, max: 35, color: 'var(--c-primary)' },
-                    { label: 'Ribaund', val: stats.rpg, max: 20, color: 'var(--c-accent)' },
-                    { label: 'Asist', val: stats.apg, max: 15, color: 'var(--c-purple)' },
-                    { label: 'Top Çalma', val: stats.spg, max: 5, color: 'var(--c-yellow)' },
-                    { label: 'Blok', val: stats.bpg, max: 6, color: 'var(--c-green)' },
-                    { label: 'Dakika', val: stats.mpg, max: 40, color: 'var(--c-text-2)' },
-                  ].map(s => (
-                    <div key={s.label}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--c-text-2)' }}>{s.label}</span>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: s.color }}>{s.val}</span>
-                      </div>
-                      <div className="progress-bar">
-                        <div className="progress-fill" style={{
-                          width: `${Math.min((parseFloat(s.val) / s.max) * 100, 100)}%`,
-                          background: s.color,
-                        }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : <div className="empty-state"><p>Maç istatistiği bulunamadı</p></div>}
-            </div>
-          </div>
-
-          {/* Match Trend */}
-          {matchTrend.length > 0 && (
-            <div className="card">
-              <div className="card-header">
-                <div className="card-title">Maç Bazlı Performans</div>
-              </div>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={matchTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="game" tick={{ fill: 'var(--c-text-3)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: 'var(--c-text-3)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ fontSize: '0.75rem', color: 'var(--c-text-3)' }} />
-                  <Line type="monotone" dataKey="sayı" stroke="#FF6B35" strokeWidth={2} dot={{ fill: '#FF6B35', r: 4 }} />
-                  <Line type="monotone" dataKey="ribaund" stroke="#4ECDC4" strokeWidth={2} dot={{ fill: '#4ECDC4', r: 4 }} />
-                  <Line type="monotone" dataKey="asist" stroke="#A78BFA" strokeWidth={2} dot={{ fill: '#A78BFA', r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tab Content: Physical */}
-      {activeTab === 'physical' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-          {physicalData.length === 0 ? (
-            <div className="empty-state"><div className="empty-state-icon">📏</div><p>Fiziksel ölçüm verisi bulunamadı</p></div>
-          ) : (
-            <>
-              {/* Latest measurements */}
-              <div>
-                <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-4)', fontSize: '1rem', fontWeight: 700 }}>
-                  Son Ölçümler ({physicalData[physicalData.length - 1]?.date})
-                </h3>
-                <div className="grid-4">
-                  {[
-                    { label: 'Boy', val: `${physicalData.at(-1)?.heightCm} cm`, color: 'var(--c-primary)' },
-                    { label: 'Kilo', val: `${physicalData.at(-1)?.weightKg} kg`, color: 'var(--c-accent)' },
-                    { label: 'Yağ Oranı', val: `${physicalData.at(-1)?.bodyFatPct}%`, color: 'var(--c-yellow)' },
-                    { label: 'Dikey Sıçrama', val: `${physicalData.at(-1)?.verticalJumpCm} cm`, color: 'var(--c-purple)' },
-                    { label: '30m Sprint', val: `${physicalData.at(-1)?.sprint30mSec}s`, color: 'var(--c-green)' },
-                    { label: 'Çeviklik', val: `${physicalData.at(-1)?.agilityTestSec}s`, color: 'var(--c-red)' },
-                    { label: 'VO₂Max', val: physicalData.at(-1)?.vo2max, color: 'var(--c-text)' },
-                  ].map(item => (
-                    <div key={item.label} className="stat-card">
-                      <div className="stat-card-value" style={{ fontSize: '1.5rem', color: item.color }}>{item.val}</div>
-                      <div className="stat-card-label">{item.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Weight Chart */}
-              <div className="card">
-                <div className="card-header">
-                  <div className="card-title">Kilo & Dikey Sıçrama Gelişimi</div>
-                </div>
-                <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={physicalData}>
-                    <defs>
-                      <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#FF6B35" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="jGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4ECDC4" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#4ECDC4" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="date" tick={{ fill: 'var(--c-text-3)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: 'var(--c-text-3)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
-                    <Area type="monotone" dataKey="weightKg" name="Kilo (kg)" stroke="#FF6B35" fill="url(#wGrad)" strokeWidth={2} />
-                    <Area type="monotone" dataKey="verticalJumpCm" name="Sıçrama (cm)" stroke="#4ECDC4" fill="url(#jGrad)" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Tab Content: Goals */}
-      {activeTab === 'goals' && (
-        <div>
-          {playerGoals.length === 0 ? (
-            <div className="empty-state"><div className="empty-state-icon">🎯</div><p>Hedef bulunamadı</p></div>
-          ) : (
-            <div className="grid-2">
-              {playerGoals.map(goal => {
-                const pct = Math.min(Math.round((goal.currentValue / goal.targetValue) * 100), 100);
-                const achieved = goal.status === 'achieved';
-                return (
-                  <div key={goal.id} className="goal-card">
-                    <div className="goal-card-header">
-                      <div>
-                        <div className="goal-card-title">{goal.title}</div>
-                        <div className="goal-card-desc">{goal.description}</div>
-                      </div>
-                      <div className={`badge badge-${achieved ? 'green' : goal.status === 'missed' ? 'red' : 'orange'}`}>
-                        {achieved ? '✅ Tamamlandı' : goal.status === 'missed' ? '❌ Kaçırıldı' : '🎯 Devam'}
-                      </div>
-                    </div>
-                    <div style={{ marginBottom: 'var(--space-2)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--c-text-3)' }}>İlerleme</span>
-                        <span style={{ fontWeight: 700, color: achieved ? 'var(--c-green)' : 'var(--c-primary)' }}>{pct}%</span>
-                      </div>
-                      <div className="progress-bar">
-                        <div className="progress-fill" style={{
-                          width: `${pct}%`,
-                          background: achieved ? 'var(--c-green)' : 'var(--g-primary)',
-                        }} />
-                      </div>
-                    </div>
-                    <div className="goal-numbers">
-                      <span>Mevcut: <strong style={{ color: 'var(--c-primary)' }}>{goal.currentValue} {goal.unit}</strong></span>
-                      <span>Hedef: <strong>{goal.targetValue} {goal.unit}</strong></span>
-                    </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--c-text-3)', marginTop: 6 }}>
-                      📅 Bitiş: {goal.deadline}
-                    </div>
+              <div className="card-header"><div className="card-title">🧬 Genetik & Kimlik Bilgileri</div></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+                {[
+                  { label: 'Baba Boyu', val: geneticsForm.fatherHeight },
+                  { label: 'Anne Boyu', val: geneticsForm.motherHeight },
+                  { label: 'Tahmini Erişkin Boy', val: geneticsForm.targetHeight },
+                  { label: 'Alerji', val: geneticsForm.allergy },
+                ].filter(x => x.val).map(item => (
+                  <div key={item.label} style={{ background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--c-text-3)', marginBottom: 4, textTransform: 'uppercase' }}>{item.label}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{item.val}</div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              {geneticsForm.note && (
+                <div style={{ marginTop: 16, padding: '12px 14px', background: 'rgba(255,107,53,0.06)', border: '1px solid rgba(255,107,53,0.15)', borderRadius: 'var(--r-md)', fontSize: '0.82rem', color: 'var(--c-text-2)' }}>
+                  💡 {geneticsForm.note}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Antropometri */}
+          {antroForm.length > 0 && (
+            <div className="card">
+              <div className="card-header"><div className="card-title">📏 Antropometri Ölçümleri</div></div>
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr><th>Ölçüm</th><th>2025</th><th>2026</th><th>Değişim</th><th>Yorum</th></tr>
+                  </thead>
+                  <tbody>
+                    {antroForm.map((m, i) => (
+                      <tr key={i}>
+                        <td style={{ fontWeight: 600 }}>{m.metric}</td>
+                        <td style={{ color: 'var(--c-text-3)' }}>{m.val2025 || '—'}</td>
+                        <td style={{ fontWeight: 700, color: 'var(--c-primary)' }}>{m.val2026 || '—'}</td>
+                        <td style={{ fontWeight: 700 }}>{m.change || '—'}</td>
+                        <td style={{ fontSize: '0.75rem', color: 'var(--c-text-3)' }}>{m.comment || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Skills Grid */}
+          <div className="grid-2">
+            {teknikForm.length > 0 && (
+              <div className="card">
+                <div className="card-header"><div className="card-title">🏀 Teknik Analiz</div></div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {teknikForm.map((skill, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 12px', background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)' }}>
+                      <span style={{ fontSize: '1.1rem' }}>{skill.status}</span>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{skill.name}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--c-text-3)' }}>{skill.analysis}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {taktikForm.length > 0 && (
+              <div className="card">
+                <div className="card-header"><div className="card-title">🧠 Taktik & Mental</div></div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {taktikForm.map((skill, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 12px', background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)' }}>
+                      <span style={{ fontSize: '1.1rem' }}>{skill.status}</span>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{skill.name}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--c-text-3)' }}>{skill.analysis}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Coach Report */}
+          {coachForm && (
+            <div className="card">
+              <div className="card-header"><div className="card-title">📝 Antrenör Değerlendirmesi</div></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {Object.entries(coachForm)
+                  .filter(([k, v]) => k && v)
+                  .map(([title, text]) => (
+                    <div key={title}>
+                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--c-primary)', marginBottom: 6 }}>{title}</div>
+                      <div style={{ fontSize: '0.82rem', color: 'var(--c-text-2)', padding: '10px 14px', background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)', borderLeft: '3px solid var(--c-primary)' }}>{text}</div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Goals */}
+          {goalsForm.length > 0 && (
+            <div className="card">
+              <div className="card-header"><div className="card-title">🎯 Hedef Takip Tablosu</div></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {goalsForm.map((g, i) => (
+                  <div key={i} style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--c-primary)', fontWeight: 700 }}>{g.category}</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{g.title}</div>
+                    </div>
+                    <span className="badge badge-orange">🎯 Devam</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Tab Content: Attendance */}
-      {activeTab === 'attendance' && (
-        <div>
-          <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
-            <div style={{ display: 'flex', gap: 'var(--space-8)', alignItems: 'center' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  fontFamily: 'var(--font-display)', fontSize: '3rem', fontWeight: 900,
-                  color: attendanceRate >= 80 ? 'var(--c-green)' : attendanceRate >= 60 ? 'var(--c-yellow)' : 'var(--c-red)',
-                }}>{attendanceRate}%</div>
-                <div style={{ color: 'var(--c-text-2)', fontSize: '0.85rem' }}>Devam Oranı</div>
+      {/* ========================================================
+          TAB 2 (EDIT-1): 1. KİMLİK & GENETİK 
+          ======================================================== */}
+      {activeTab === 'edit-1' && (
+        <div className="card">
+          <div className="card-header"><div className="card-title">1. Kimlik & Genetik Bilgileri</div></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+            {/* Left: General Profile */}
+            <div>
+              <h3 style={{ fontSize: '0.9rem', marginBottom: 12, color: 'var(--c-primary)' }}>Genel Bilgiler</h3>
+              <div className="form-group">
+                <label className="form-label">Ad Soyad</label>
+                <input type="text" className="form-input" value={profileForm.fullName} onChange={e => setProfileForm({ ...profileForm, fullName: e.target.value })} />
               </div>
-              <div style={{ flex: 1 }}>
-                <div className="progress-bar" style={{ height: 12 }}>
-                  <div className="progress-fill" style={{
-                    width: `${attendanceRate}%`,
-                    background: attendanceRate >= 80 ? 'var(--c-green)' : 'var(--c-yellow)',
-                  }} />
-                </div>
-                <div style={{ display: 'flex', gap: 'var(--space-6)', marginTop: 'var(--space-3)', fontSize: '0.8rem', color: 'var(--c-text-2)' }}>
-                  <span>✅ Katıldı: {playerAttendance.filter(a => a.present).length}</span>
-                  <span>❌ Katılmadı: {playerAttendance.filter(a => !a.present).length}</span>
-                  <span>📋 Toplam: {playerAttendance.length} oturum</span>
-                </div>
+              <div className="form-group">
+                <label className="form-label">Doğum Tarihi</label>
+                <input type="text" className="form-input" placeholder="örn. 13.10.2017" value={profileForm.birthDate} onChange={e => setProfileForm({ ...profileForm, birthDate: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Kategori</label>
+                <input type="text" className="form-input" placeholder="örn. U9/U10" value={profileForm.category} onChange={e => setProfileForm({ ...profileForm, category: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Forma Numarası</label>
+                <input type="number" className="form-input" value={profileForm.jerseyNumber} onChange={e => setProfileForm({ ...profileForm, jerseyNumber: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Dominant El</label>
+                <select className="form-input" value={profileForm.dominantHand} onChange={e => setProfileForm({ ...profileForm, dominantHand: e.target.value })}>
+                  <option value="right">Sağ</option>
+                  <option value="left">Sol</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Pozisyon / Rol</label>
+                <input type="text" className="form-input" placeholder="örn. 1 - Oyun Kurucu" value={profileForm.position} onChange={e => setProfileForm({ ...profileForm, position: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Sporcu Durumu</label>
+                <select className="form-input" value={profileForm.status} onChange={e => setProfileForm({ ...profileForm, status: e.target.value })}>
+                  <option value="active">🟢 Aktif</option>
+                  <option value="injured">🔴 Sakatlanmış (Sakat)</option>
+                  <option value="inactive">🟡 Pasif (Aktif Değil)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Right: Genetic info */}
+            <div>
+              <h3 style={{ fontSize: '0.9rem', marginBottom: 12, color: 'var(--c-primary)' }}>Genetik ve Sağlık</h3>
+              <div className="form-group">
+                <label className="form-label">Baba Boyu</label>
+                <input type="text" className="form-input" placeholder="örn. 182 cm" value={geneticsForm.fatherHeight} onChange={e => setGeneticsForm({ ...geneticsForm, fatherHeight: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Anne Boyu</label>
+                <input type="text" className="form-input" placeholder="örn. 175 cm" value={geneticsForm.motherHeight} onChange={e => setGeneticsForm({ ...geneticsForm, motherHeight: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Tahmini Erişkin Boy</label>
+                <input type="text" className="form-input" placeholder="örn. 183.5 ± 8 cm" value={geneticsForm.targetHeight} onChange={e => setGeneticsForm({ ...geneticsForm, targetHeight: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Alerji / Sağlık Durumu</label>
+                <input type="text" className="form-input" placeholder="örn. Var, net tanı yok" value={geneticsForm.allergy} onChange={e => setGeneticsForm({ ...geneticsForm, allergy: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Genetik Değerlendirme / Notlar</label>
+                <textarea rows={4} className="form-input" placeholder="Yorum ekleyin..." value={geneticsForm.note} onChange={e => setGeneticsForm({ ...geneticsForm, note: e.target.value })} />
               </div>
             </div>
           </div>
+          <button className="btn btn-primary" onClick={handleSaveKimlikGenetik} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Save size={16} /> Kaydet
+          </button>
+        </div>
+      )}
 
-          <div className="table-wrapper">
+      {/* ========================================================
+          TAB 3 (EDIT-2): 2. ANTROPOMETRİ 
+          ======================================================== */}
+      {activeTab === 'edit-2' && (
+        <div className="card">
+          <div className="card-header"><div className="card-title">2. Antropometrik Gelişim Ölçümleri</div></div>
+          <div className="table-wrapper" style={{ marginBottom: 20 }}>
             <table>
               <thead>
                 <tr>
-                  <th>Tarih</th>
-                  <th>Tür</th>
-                  <th>Süre</th>
-                  <th>Durum</th>
-                  <th>Sebep</th>
+                  <th>Ölçüm Tipi</th>
+                  <th>2025 Değeri</th>
+                  <th>2026 Değeri</th>
+                  <th>Değişim Farkı</th>
+                  <th>Bilimsel Yorum / Notlar</th>
+                  <th>İşlem</th>
                 </tr>
               </thead>
               <tbody>
-                {playerAttendance.map(a => {
-                  const session = trainingSessions.find(s => s.id === a.sessionId);
-                  return (
-                    <tr key={a.id}>
-                      <td>{session?.date}</td>
-                      <td>{session?.type}</td>
-                      <td>{session?.durationMinutes} dk</td>
-                      <td>
-                        <span className={`badge badge-${a.present ? 'green' : 'red'}`}>
-                          {a.present ? '✅ Katıldı' : '❌ Katılmadı'}
-                        </span>
-                      </td>
-                      <td style={{ color: 'var(--c-text-3)', fontSize: '0.8rem' }}>
-                        {a.reasonAbsent || '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {antroForm.map((item, idx) => (
+                  <tr key={idx}>
+                    <td>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }} 
+                        value={item.metric} 
+                        onChange={e => {
+                          const updated = [...antroForm];
+                          updated[idx].metric = e.target.value;
+                          setAntroForm(updated);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }} 
+                        value={item.val2025} 
+                        onChange={e => {
+                          const updated = [...antroForm];
+                          updated[idx].val2025 = e.target.value;
+                          setAntroForm(updated);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }} 
+                        value={item.val2026} 
+                        onChange={e => {
+                          const updated = [...antroForm];
+                          updated[idx].val2026 = e.target.value;
+                          setAntroForm(updated);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }} 
+                        value={item.change} 
+                        onChange={e => {
+                          const updated = [...antroForm];
+                          updated[idx].change = e.target.value;
+                          setAntroForm(updated);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }} 
+                        value={item.comment} 
+                        onChange={e => {
+                          const updated = [...antroForm];
+                          updated[idx].comment = e.target.value;
+                          setAntroForm(updated);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <button 
+                        className="btn btn-ghost btn-sm" 
+                        onClick={() => {
+                          const updated = antroForm.filter((_, i) => i !== idx);
+                          setAntroForm(updated);
+                        }}
+                      >
+                        <Trash2 size={14} style={{ color: 'var(--c-red)' }} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+          </div>
+          
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => setAntroForm([...antroForm, { metric: '', val2025: '', val2026: '', change: '', comment: '' }])}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Plus size={16} /> Satır Ekle
+            </button>
+            <button className="btn btn-primary" onClick={handleSaveAntropometri} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Save size={16} /> Kaydet
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          TAB 4 (EDIT-3): 3. TEKNİK ANALİZ 
+          ======================================================== */}
+      {activeTab === 'edit-3' && (
+        <div className="card">
+          <div className="card-header"><div className="card-title">3. Teknik Analiz Becerileri</div></div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+            {teknikForm.map((item, idx) => (
+              <div key={idx} style={{ background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)', padding: 12, border: '1px solid var(--c-border)' }}>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 8, alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Beceri Adı</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                      value={item.name} 
+                      onChange={e => {
+                        const updated = [...teknikForm];
+                        updated[idx].name = e.target.value;
+                        setTeknikForm(updated);
+                      }} 
+                    />
+                  </div>
+                  <div style={{ width: 140 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Seviye (Emoji)</label>
+                    <select 
+                      className="form-input" 
+                      style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                      value={item.status} 
+                      onChange={e => {
+                        const updated = [...teknikForm];
+                        updated[idx].status = e.target.value;
+                        setTeknikForm(updated);
+                      }}
+                    >
+                      <option value="🟢">🟢 Güçlü Yön</option>
+                      <option value="🟡">🟡 Gelişim Alanı</option>
+                      <option value="🔴">🔴 Zayıf Yön</option>
+                    </select>
+                  </div>
+                  <button 
+                    className="btn btn-ghost" 
+                    style={{ marginTop: 20 }}
+                    onClick={() => {
+                      const updated = teknikForm.filter((_, i) => i !== idx);
+                      setTeknikForm(updated);
+                    }}
+                  >
+                    <Trash2 size={16} style={{ color: 'var(--c-red)' }} />
+                  </button>
+                </div>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Analiz ve Yorum</label>
+                  <textarea 
+                    rows={2} 
+                    className="form-input" 
+                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                    value={item.analysis} 
+                    onChange={e => {
+                      const updated = [...teknikForm];
+                      updated[idx].analysis = e.target.value;
+                      setTeknikForm(updated);
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => setTeknikForm([...teknikForm, { name: '', status: '🟡', analysis: '' }])}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Plus size={16} /> Beceri Ekle
+            </button>
+            <button className="btn btn-primary" onClick={handleSaveTeknikAnaliz} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Save size={16} /> Kaydet
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          TAB 5 (EDIT-4): 4. TAKTİK & MENTAL 
+          ======================================================== */}
+      {activeTab === 'edit-4' && (
+        <div className="card">
+          <div className="card-header"><div className="card-title">4. Taktik, Mental & Fiziksel Analiz</div></div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+            {taktikForm.map((item, idx) => (
+              <div key={idx} style={{ background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)', padding: 12, border: '1px solid var(--c-border)' }}>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 8, alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Alan / Beceri</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                      value={item.name} 
+                      onChange={e => {
+                        const updated = [...taktikForm];
+                        updated[idx].name = e.target.value;
+                        setTaktikForm(updated);
+                      }} 
+                    />
+                  </div>
+                  <div style={{ width: 140 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Seviye</label>
+                    <select 
+                      className="form-input" 
+                      style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                      value={item.status} 
+                      onChange={e => {
+                        const updated = [...taktikForm];
+                        updated[idx].status = e.target.value;
+                        setTaktikForm(updated);
+                      }}
+                    >
+                      <option value="🟢">🟢 Güçlü Yön</option>
+                      <option value="🟡">🟡 Gelişim Alanı</option>
+                      <option value="🔴">🔴 Zayıf Yön</option>
+                    </select>
+                  </div>
+                  <button 
+                    className="btn btn-ghost" 
+                    style={{ marginTop: 20 }}
+                    onClick={() => {
+                      const updated = taktikForm.filter((_, i) => i !== idx);
+                      setTaktikForm(updated);
+                    }}
+                  >
+                    <Trash2 size={16} style={{ color: 'var(--c-red)' }} />
+                  </button>
+                </div>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Detaylı Analiz</label>
+                  <textarea 
+                    rows={2} 
+                    className="form-input" 
+                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                    value={item.analysis} 
+                    onChange={e => {
+                      const updated = [...taktikForm];
+                      updated[idx].analysis = e.target.value;
+                      setTaktikForm(updated);
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => setTaktikForm([...taktikForm, { name: '', status: '🟢', analysis: '' }])}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Plus size={16} /> Satır Ekle
+            </button>
+            <button className="btn btn-primary" onClick={handleSaveTaktikMental} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Save size={16} /> Kaydet
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          TAB 6 (EDIT-5): 5. COACH REPORT 
+          ======================================================== */}
+      {activeTab === 'edit-5' && (
+        <div className="card">
+          <div className="card-header"><div className="card-title">5. Antrenör Değerlendirme Raporu</div></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
+            {Object.keys(coachForm).map(key => (
+              <div key={key} className="form-group">
+                <label className="form-label" style={{ fontWeight: 700, color: 'var(--c-primary)' }}>{key}</label>
+                <textarea 
+                  rows={3} 
+                  className="form-input" 
+                  value={coachForm[key]} 
+                  onChange={e => {
+                    setCoachForm({ ...coachForm, [key]: e.target.value });
+                  }} 
+                />
+              </div>
+            ))}
+          </div>
+          <button className="btn btn-primary" onClick={handleSaveCoachReport} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Save size={16} /> Kaydet
+          </button>
+        </div>
+      )}
+
+      {/* ========================================================
+          TAB 7 (EDIT-6): 6. TAKİP & HEDEFLER 
+          ======================================================== */}
+      {activeTab === 'edit-6' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          
+          {/* Tracking calendar history */}
+          <div className="card">
+            <div className="card-header"><div className="card-title">Gelişim Ölçüm Takip Tarihleri (Quarterly Tracking)</div></div>
+            <div className="table-wrapper" style={{ marginBottom: 16 }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Dönem Tarihi</th>
+                    <th>Boy</th>
+                    <th>Kilo</th>
+                    <th>Kulaç</th>
+                    <th>Bel</th>
+                    <th>Omuz</th>
+                    <th>Bacak</th>
+                    <th>Yorum / Not</th>
+                    <th>İşlem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trackingForm.map((item, idx) => (
+                    <tr key={idx}>
+                      <td>
+                        <input 
+                          type="text" 
+                          placeholder="30.09.2026" 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }} 
+                          value={item.date} 
+                          onChange={e => {
+                            const updated = [...trackingForm];
+                            updated[idx].date = e.target.value;
+                            setTrackingForm(updated);
+                          }} 
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', width: 60, border: '1px solid var(--c-border)' }} 
+                          value={item.heightCm || ''} 
+                          onChange={e => {
+                            const updated = [...trackingForm];
+                            updated[idx].heightCm = e.target.value;
+                            setTrackingForm(updated);
+                          }} 
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', width: 60, border: '1px solid var(--c-border)' }} 
+                          value={item.weightKg || ''} 
+                          onChange={e => {
+                            const updated = [...trackingForm];
+                            updated[idx].weightKg = e.target.value;
+                            setTrackingForm(updated);
+                          }} 
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', width: 60, border: '1px solid var(--c-border)' }} 
+                          value={item.kulac || ''} 
+                          onChange={e => {
+                            const updated = [...trackingForm];
+                            updated[idx].kulac = e.target.value;
+                            setTrackingForm(updated);
+                          }} 
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', width: 60, border: '1px solid var(--c-border)' }} 
+                          value={item.bel || ''} 
+                          onChange={e => {
+                            const updated = [...trackingForm];
+                            updated[idx].bel = e.target.value;
+                            setTrackingForm(updated);
+                          }} 
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', width: 60, border: '1px solid var(--c-border)' }} 
+                          value={item.omuz || ''} 
+                          onChange={e => {
+                            const updated = [...trackingForm];
+                            updated[idx].omuz = e.target.value;
+                            setTrackingForm(updated);
+                          }} 
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', width: 60, border: '1px solid var(--c-border)' }} 
+                          value={item.bacak || ''} 
+                          onChange={e => {
+                            const updated = [...trackingForm];
+                            updated[idx].bacak = e.target.value;
+                            setTrackingForm(updated);
+                          }} 
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }} 
+                          value={item.note || ''} 
+                          onChange={e => {
+                            const updated = [...trackingForm];
+                            updated[idx].note = e.target.value;
+                            setTrackingForm(updated);
+                          }} 
+                        />
+                      </td>
+                      <td>
+                        <button 
+                          className="btn btn-ghost btn-sm" 
+                          onClick={() => {
+                            const updated = trackingForm.filter((_, i) => i !== idx);
+                            setTrackingForm(updated);
+                          }}
+                        >
+                          <Trash2 size={14} style={{ color: 'var(--c-red)' }} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setTrackingForm([...trackingForm, { date: '', heightCm: '', weightKg: '', kulac: '', bel: '', omuz: '', bacak: '', note: '' }])}>
+              <Plus size={14} /> Tarih Dönemi Ekle
+            </button>
+          </div>
+
+          {/* Development goals list */}
+          <div className="card">
+            <div className="card-header"><div className="card-title">3 Aylık / Sezonluk Hedefler</div></div>
+            <div className="table-wrapper" style={{ marginBottom: 16 }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Gelişim Alanı</th>
+                    <th>Hedef Tanımı</th>
+                    <th>Durum</th>
+                    <th>İşlem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {goalsForm.map((item, idx) => (
+                    <tr key={idx}>
+                      <td style={{ width: 150 }}>
+                        <select 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }}
+                          value={item.category} 
+                          onChange={e => {
+                            const updated = [...goalsForm];
+                            updated[idx].category = e.target.value;
+                            setGoalsForm(updated);
+                          }}
+                        >
+                          <option value="Teknik">Teknik</option>
+                          <option value="Taktik">Taktik</option>
+                          <option value="Mental">Mental</option>
+                          <option value="Fiziksel">Fiziksel</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }}
+                          value={item.title} 
+                          onChange={e => {
+                            const updated = [...goalsForm];
+                            updated[idx].title = e.target.value;
+                            setGoalsForm(updated);
+                          }}
+                        />
+                      </td>
+                      <td style={{ width: 140 }}>
+                        <select 
+                          className="form-input" 
+                          style={{ padding: '4px 8px', fontSize: '0.8rem', border: '1px solid var(--c-border)' }}
+                          value={item.status} 
+                          onChange={e => {
+                            const updated = [...goalsForm];
+                            updated[idx].status = e.target.value;
+                            setGoalsForm(updated);
+                          }}
+                        >
+                          <option value="active">🎯 Devam</option>
+                          <option value="achieved">✅ Tamamlandı</option>
+                          <option value="missed">❌ Kaçırıldı</option>
+                        </select>
+                      </td>
+                      <td>
+                        <button 
+                          className="btn btn-ghost btn-sm" 
+                          onClick={() => {
+                            const updated = goalsForm.filter((_, i) => i !== idx);
+                            setGoalsForm(updated);
+                          }}
+                        >
+                          <Trash2 size={14} style={{ color: 'var(--c-red)' }} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setGoalsForm([...goalsForm, { category: 'Teknik', title: '', status: 'active' }])}>
+                <Plus size={14} /> Yeni Hedef Ekle
+              </button>
+              <button className="btn btn-primary" onClick={handleSaveTakipHedefler} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Save size={16} /> Değişiklikleri Kaydet
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+
+# Credentials and secrets
+*şifresi.txt
+*şifre*.txt
+atletik sporcu gelişim uygulama şifresi.txt

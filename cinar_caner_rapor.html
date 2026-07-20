@@ -58,6 +58,10 @@ body{
   overflow:hidden;
 }
 
+.print-page {
+  display: contents;
+}
+
 /* Panel */
 .panel{
   background:var(--navy2);
@@ -304,10 +308,466 @@ body{
   border-radius:7px;padding:9px 11px;margin-top:12px;
 }
 
-@media print{
-  body{background:#fff;padding:0;}
-  .no-print{display:none;}
-  .report{box-shadow:none;width:100%;}
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 5mm !important;
+  }
+
+  html, body {
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: 'Inter', 'Montserrat', -apple-system, sans-serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── Hide everything else, only show the report ── */
+  body * { visibility: hidden; }
+  .report, .report * { visibility: visible; }
+  .no-print { display: none !important; }
+
+  /* ── Main container ── */
+  .report {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #ffffff !important;
+    display: block !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* ── Her sayfa wrapper'ı (2 panel yan yana, 2 dikey kolon) ── */
+  .print-page {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 4mm !important;
+    background: #ffffff !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* ── Panels: fill 100% height inside page border ── */
+  .panel,
+  .hero-panel {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    max-height: 100% !important;
+    box-sizing: border-box !important;
+    padding: 14px 14px 32px !important;
+    border: 1.5px solid #1e293b !important;
+    border-radius: 6px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .panel *,
+  .hero-panel * {
+    font-family: 'Inter', 'Montserrat', -apple-system, sans-serif !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── Page numbers ── */
+  .pnum {
+    position: absolute !important;
+    bottom: 7px !important;
+    left: 0 !important;
+    right: 0 !important;
+    text-align: center !important;
+    font-size: 7.5pt !important;
+    font-weight: 800 !important;
+    color: #64748b !important;
+    letter-spacing: 0.12em !important;
+    transform: none !important;
+    z-index: 10 !important;
+  }
+
+  /* ── Accent & layout formatting ── */
+  .ir {
+    font-size: 7.5pt !important;
+    margin-bottom: 4px !important;
+    align-items: flex-start !important;
+    gap: 5px !important;
+  }
+  .ir-lbl {
+    font-size: 7.5pt !important;
+    color: #64748b !important;
+    min-width: 88px !important;
+  }
+  .ir-val {
+    font-size: 7.5pt !important;
+    color: #0f172a !important;
+    font-weight: 600 !important;
+  }
+
+  /* Section headers: red horizontal line on the left */
+  .sl {
+    color: #e74c3c !important;
+    font-size: 7.5pt !important;
+    font-weight: 800 !important;
+    margin-top: 8px !important;
+    margin-bottom: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+  .sl::before {
+    display: inline-block !important;
+    content: '' !important;
+    width: 10px !important;
+    height: 1.5px !important;
+    background: #c0392b !important;
+    border-radius: 2px !important;
+  }
+
+  /* Tactical skill header style */
+  .tsl {
+    color: #e67e22 !important;
+    font-size: 7.5pt !important;
+    font-weight: 800 !important;
+    margin-top: 8px !important;
+    margin-bottom: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+  }
+  .tsl::before {
+    display: inline-block !important;
+    content: '' !important;
+    width: 10px !important;
+    height: 1.5px !important;
+    background: #e67e22 !important;
+    border-radius: 2px !important;
+  }
+
+  /* Inner boxes & cards */
+  .box {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 5px !important;
+    padding: 6px 8px !important;
+  }
+  .rel-box {
+    background: #fff7ed !important;
+    border: 1px solid #ffd8a8 !important;
+    border-radius: 5px !important;
+    padding: 6px 8px !important;
+    margin-top: 5px !important;
+  }
+  .rel-title {
+    color: #ea580c !important;
+    font-weight: 700 !important;
+    font-size: 7pt !important;
+  }
+  .rel-txt {
+    color: #475569 !important;
+    font-size: 7pt !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Skill lines */
+  .sr {
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 3px 0 !important;
+    align-items: start !important;
+    gap: 4px !important;
+  }
+  .sr-name {
+    color: #0f172a !important;
+    font-size: 7pt !important;
+    font-weight: 700 !important;
+    min-width: 85px !important;
+    word-break: break-word !important;
+    line-height: 1.2 !important;
+  }
+  .sr-txt {
+    color: #475569 !important;
+    font-size: 6.5pt !important;
+    line-height: 1.25 !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+  }
+  .sr-dot {
+    padding-top: 2px !important;
+  }
+
+  /* Tables */
+  .tbl th {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border-bottom: 1.5px solid #cbd5e1 !important;
+    font-weight: 700 !important;
+    font-size: 6.5pt !important;
+    padding: 3px 2px !important;
+    white-space: nowrap !important;
+  }
+  .tbl td {
+    color: #334155 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    font-size: 7pt !important;
+    padding: 3px 2px !important;
+  }
+
+  /* Panel Header */
+  .ph {
+    padding-bottom: 6px !important;
+    margin-bottom: 8px !important;
+    border-bottom: 2px solid #c0392b !important;
+    flex-shrink: 0 !important;
+  }
+  .ph-title {
+    color: #0f172a !important;
+    font-size: 9pt !important;
+    font-weight: 800 !important;
+  }
+  .ph-num {
+    background: #c0392b !important;
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 10px !important;
+  }
+
+  /* Hero Panel */
+  .hero-panel {
+    background: #ffffff !important;
+  }
+  .hero-title-h1 {
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    font-weight: 800;
+  }
+  .hero-title-h2 {
+    color: #c0392b !important;
+    font-size: 20pt !important;
+    font-weight: 900 !important;
+  }
+  .hero-season {
+    color: #e67e22 !important;
+    font-size: 7.5pt !important;
+    font-weight: 700 !important;
+  }
+  .hero-name h3 {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+    font-size: 13pt !important;
+  }
+  .hero-name p {
+    color: #e74c3c !important;
+    font-weight: 700 !important;
+    font-size: 7.5pt !important;
+  }
+  .hero-img-area {
+    width: 120px !important;
+    height: 145px !important;
+    margin-bottom: 7px !important;
+    border: 1.5px solid rgba(192,57,43,.35) !important;
+  }
+  .hero-img-emoji { font-size: 58px !important; }
+  .hero-club-sub {
+    color: #64748b !important;
+    font-size: 7.5pt !important;
+  }
+
+  /* Coach */
+  .c-sec {
+    color: #c0392b !important;
+    font-weight: 800 !important;
+    font-size: 7.5pt !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    padding-bottom: 2px !important;
+    margin-top: 5px !important;
+  }
+  .c-txt {
+    color: #334155 !important;
+    font-size: 7pt !important;
+    line-height: 1.3 !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 4 !important;
+    -webkit-box-orient: vertical !important;
+  }
+  .c-sign {
+    color: #e67e22 !important;
+    font-size: 13px !important;
+    margin-top: 6px !important;
+  }
+  .c-sign-sub {
+    color: #64748b !important;
+    font-size: 7.5pt !important;
+  }
+  .qm {
+    color: #fee2e2 !important;
+    font-size: 28px !important;
+    line-height: 1 !important;
+  }
+
+  /* Skill status badges */
+  .d-g {
+    background: #27ae60 !important;
+    color: #ffffff !important;
+    font-size: 5.5pt !important;
+    font-weight: 700 !important;
+    padding: 1px 3px !important;
+    border-radius: 3px !important;
+    display: inline-block !important;
+    box-shadow: none !important;
+    width: auto !important;
+    height: auto !important;
+  }
+  .d-g::after { content: 'güçlü' !important; }
+  
+  .d-y {
+    background: #e67e22 !important;
+    color: #ffffff !important;
+    font-size: 5.5pt !important;
+    font-weight: 700 !important;
+    padding: 1px 3px !important;
+    border-radius: 3px !important;
+    display: inline-block !important;
+    box-shadow: none !important;
+    width: auto !important;
+    height: auto !important;
+  }
+  .d-y::after { content: 'gelişim' !important; }
+
+  /* Ratios */
+  .ratio-grid { gap: 5px !important; margin-top: 5px !important; }
+  .ratio-c {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 5px !important;
+    padding: 5px !important;
+  }
+  .ratio-v {
+    color: #e67e22 !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+  }
+  .ratio-l { color: #64748b !important; font-size: 6.5pt !important; }
+
+  /* Potential score */
+  .pot-box {
+    background: #fffafb !important;
+    border: 1px solid #fee2e2 !important;
+    padding: 8px !important;
+    margin-top: 5px !important;
+  }
+  .pot-score {
+    color: #0f172a !important;
+    font-size: 28px !important;
+  }
+  .pot-score span {
+    color: #64748b !important;
+  }
+  .pot-lbl {
+    color: #27ae60 !important;
+    font-size: 8pt !important;
+  }
+  .pot-sub {
+    font-size: 6.5pt !important;
+    color: #475569 !important;
+    line-height: 1.3 !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+  }
+
+  /* Goals */
+  .gr-txt { font-size: 7.5pt !important; line-height: 1.2 !important; color: #0f172a !important; }
+  .gr-icon { font-size: 10px !important; }
+
+  /* Summary box */
+  .sum-grid { gap: 5px !important; margin-bottom: 6px !important; }
+  .sum-box {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 7px !important;
+  }
+  .sum-title { font-size: 7pt !important; margin-bottom: 3px !important; }
+  .sum-item {
+    font-size: 7pt !important;
+    margin-bottom: 2px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Parent message */
+  .parent-box {
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+    padding: 8px !important;
+  }
+  .parent-title {
+    color: #27ae60 !important;
+    font-size: 8pt !important;
+    margin-bottom: 3px !important;
+  }
+  .parent-txt {
+    color: #334155 !important;
+    font-size: 7pt !important;
+    line-height: 1.28 !important;
+  }
+  .parent-sign {
+    color: #e74c3c !important;
+    font-size: 7pt !important;
+    margin-top: 3px !important;
+  }
+
+  /* Footer strip */
+  .footer-strip {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 4px 8px !important;
+    position: absolute !important;
+    bottom: 12px !important;
+    left: 0 !important;
+    right: 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+  .footer-strip * {
+    color: #64748b !important;
+    font-size: 6pt !important;
+  }
+
+  /* Progress bars */
+  .pb-wrap { margin-bottom: 4px !important; }
+  .pb-label, .pb-val { font-size: 6.5pt !important; }
+  .pb { height: 3px !important; }
+
+  /* Legend */
+  .legend { font-size: 6.5pt !important; margin-top: 4px !important; }
 }
 </style>
 </head>
@@ -320,10 +780,13 @@ body{
 
 <div class="report">
 
-<!-- ═══════════════════════════
-     0 · KAPAK
-═══════════════════════════ -->
-<div class="hero-panel">
+  <!-- PAGE 1: KAPAK & KİMLİK / GENETİK / SAĞLIK -->
+  <div class="print-page">
+    <!-- ═══════════════════════════
+         0 · KAPAK
+         ...
+    -->
+    <div class="hero-panel">
   <img src="logo1.jpeg" alt="Kocaeli Atletik" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); border: 2px solid var(--red);">
   <div class="hero-club-sub">Spor Kulübü</div>
   <div class="hero-title-h1">Oyuncu Gelişim</div>
@@ -388,17 +851,21 @@ body{
   <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:10px;color:var(--gray);">Düzenli İlaç Kullanımı</span><span class="badge badge-no">Yok</span></div>
   <p style="font-size:9px;color:var(--gray2);font-style:italic;">* Net tanı bulunmuyor</p>
 
-  <div class="rel-box">
-    <div class="rel-title">⚠ Veri Güvenirliği</div>
-    <div class="rel-txt">2025 kulaç, bel ve omuz ölçümlerinde hata şüphesi vardır; 2026 referans alınmıştır. Yöntem: Standart Antropometrik Ölçüm.</div>
+    <div class="rel-box">
+      <div class="rel-title">⚠ Veri Güvenirliği</div>
+      <div class="rel-txt">2025 kulaç, bel ve omuz ölçümlerinde hata şüphesi vardır; 2026 referans alınmıştır. Yöntem: Standart Antropometrik Ölçüm.</div>
+    </div>
+    <div class="pnum">02</div>
   </div>
-  <div class="pnum">02</div>
 </div>
 
-<!-- ═══════════════════════════
-     2 · ANTROPOMETRİK
-═══════════════════════════ -->
-<div class="panel">
+<!-- PAGE 2: ANTROPOMETRİK & TEKNİK ANALİZ -->
+<div class="print-page">
+  <!-- ═══════════════════════════
+       2 · ANTROPOMETRİK
+       ...
+  -->
+  <div class="panel">
   <div class="ph"><div class="ph-num">2</div><div class="ph-title">Antropometrik Değerlendirme</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
 
   <div class="sl">Fiziksel Ölçümler</div>
@@ -447,13 +914,6 @@ body{
     <div class="ratio-c"><div class="ratio-v">0.26</div><div class="ratio-l">Omuz / Boy</div></div>
   </div>
 
-  <div class="sl">Genel Potansiyel Skoru</div>
-  <div class="pot-box">
-    <div class="pot-score">75<span>/100</span></div>
-    <div class="pot-bar-wrap"><div class="pot-bar-fill" style="width:75%;"></div></div>
-    <div class="pot-lbl">İyi Seviye Potansiyel</div>
-    <div class="pot-sub">Fiziksel gelişim, vücut oranları ve genetik potansiyeli basketbol için idealdir. Oranlar yaş grubunda ideal aralıklardadır.</div>
-  </div>
 
   <div class="sl">Bilimsel Değerlendirme</div>
   <div class="box" style="font-size:9.5px;color:var(--gray);line-height:1.55;">
@@ -491,11 +951,15 @@ body{
   <div class="pb-wrap"><div class="pb-head"><span class="pb-label">Ball Handling</span><span class="pb-val" style="color:var(--yellow);">Gelişiyor</span></div><div class="pb"><div class="pb-fill" style="width:52%;background:linear-gradient(90deg,var(--yellow),rgba(243,156,18,.4));"></div></div></div>
   <div class="pnum">04</div>
 </div>
+</div>
 
-<!-- ═══════════════════════════
-     4 · TAKTİK & ZİHİNSEL
-═══════════════════════════ -->
-<div class="panel">
+<!-- PAGE 3: TAKTİK & ZİHİNSEL ANALİZ & COACH REPORT -->
+<div class="print-page">
+  <!-- ═══════════════════════════
+       4 · TAKTİK & ZİHİNSEL
+       ...
+  -->
+  <div class="panel">
   <div class="ph"><div class="ph-num">4</div><div class="ph-title">Taktik &amp; Zihinsel Analiz</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
 
   <div class="tsl">⚡ Taktiksel Beceriler</div>
@@ -549,11 +1013,15 @@ body{
   <div class="c-sign-sub">Başantrenör – Kocaeli Atletik Spor Kulübü</div>
   <div class="pnum">06</div>
 </div>
+</div>
 
-<!-- ═══════════════════════════
-     6 · GELİŞİM PLANI
-═══════════════════════════ -->
-<div class="panel">
+<!-- PAGE 4: GELİŞİM PLANI & SONUÇ & VELİ MESAJI -->
+<div class="print-page">
+  <!-- ═══════════════════════════
+       6 · GELİŞİM PLANI
+       ...
+  -->
+  <div class="panel">
   <div class="ph"><div class="ph-num">6</div><div class="ph-title">Gelişim Planı</div><div class="ph-badge" style="border:none; background:transparent; display:flex; align-items:center; justify-content:center;"><img src="logo1.jpeg" alt="ATL" style="width:28px; height:auto;"></div></div>
 
   <div class="sl">3 Aylık Gelişim Hedefleri</div>
@@ -644,6 +1112,7 @@ body{
     <div style="font-size:8px;color:var(--gray2);">🤖 Dijital Raporlama: ChatGPT (OpenAI)</div>
   </div>
   <div class="pnum">08</div>
+</div>
 </div>
 
 </div><!-- /report -->

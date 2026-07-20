@@ -1,482 +1,831 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { FileUp, CheckCircle, AlertTriangle, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { 
+  Upload, CheckCircle, AlertTriangle, Loader2, X, 
+  FileSpreadsheet, PlayCircle, Copy, Check, Sparkles 
+} from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { isSupabaseConfigured, supabase, localDb } from '../lib/supabase';
 
-export default function ExcelImport() {
-  const { t } = useTranslation();
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [parsedData, setParsedData] = useState(null);
-  const [status, setStatus] = useState({ type: '', message: '' });
+const CHATGPT_PROMPT_TEMPLATE = `Aşağıdaki ham sporcu listesini/verilerini analiz et ve belirtilen JSON şemasına uygun, geçerli bir JSON dizisi (Array) olarak çıktı ver. Çıktı sadece geçerli bir JSON kodu olmalı, başka hiçbir açıklama veya metin içermemelidir.
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      parseExcel(selectedFile);
-    }
-  };
+JSON Şeması:
+[
+  {
+    "fullName": "Sporcu Ad Soyad",
+    "birthDate": "Doğum tarihi GG.AA.YYYY formatında",
+    "jerseyNumber": 10,
+    "category": "U9/U10" veya "U12" veya "U14" (Metinde yoksa yaşa göre tahmin et),
+    "position": "1 – Oyun Kurucu", "2 – Şutör Guard", "3 – Kısa Forvet", "4 – Uzun Forvet", "5 – Pivot" değerlerinden biri,
+    "dominantHand": "right" veya "left",
+    "fatherHeight": "Baba boyu örn: 182 cm",
+    "motherHeight": "Anne boyu örn: 170 cm",
+    "allergy": "Alerji durumu, yoksa 'Yok'",
+    "geneticNote": "Genetik ve fiziksel potansiyel hakkında yorum",
+    "antropometri": {
+      "Boy": { "val2025": 133, "val2026": 135, "comment": "Normal gelişim" },
+      "Kilo": { "val2025": 27, "val2026": 30, "comment": "Boy ile uyumlu" },
+      "Kulaç": { "val2025": 135, "val2026": 139, "comment": "Normal" },
+      "Bel": { "val2025": 62, "val2026": 65, "comment": "Normal" },
+      "Omuz": { "val2025": 33, "val2026": 35, "comment": "Normal" },
+      "Bacak": { "val2025": 78, "val2026": 82, "comment": "Normal" }
+    },
+    "skills": [
+      { "type": "teknik", "name": "Sol El Gelişimi", "status": "🟢" veya "🟡" veya "🔴", "analysis": "Açıklama" }
+    ],
+    "coachReport": {
+      "Genel Sezon Değerlendirmesi": "Koç genel değerlendirme metni",
+      "Teknik ve Oyun Kimliği": "Teknik beceriler yorumu",
+      "Liderlik ve Takım Kültürü": "Karakter yorumu",
+      "Mental Profil": "Zihinsel durum yorumu",
+      "Gelecek Sezon Beklentisi": "Hedefler yorumu"
+    },
+    "goals": [
+      { "category": "Teknik" veya "Taktik" veya "Fiziksel" veya "Zihinsel", "title": "Hedef başlığı" }
+    ]
+  }
+]
 
-  const parseExcel = (file) => {
-    setLoading(true);
-    setStatus({ type: '', message: '' });
+Eğer ham verilerde bazı bilgiler eksikse, o alanları şemaya göre makul varsayılanlarla doldur ya da boş bırak. Beceriler (skills) alanına standart teknik ve taktik becerileri ekleyip durumlarını (status) nötr/orta (🟡) olarak ayarlayabilirsin.
+
+Dönüştürülecek Ham Sporcu Verileri:
+[Buraya verilerinizi yapıştırın]`;
+
+function parseExcelFile(file) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        
         const result = {};
         workbook.SheetNames.forEach(sheetName => {
           const sheet = workbook.Sheets[sheetName];
           result[sheetName] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
         });
-
-        // Analyze and map data structures
-        const structured = analyzeParsedData(result);
-        setParsedData(structured);
-        setStatus({ type: 'success', message: 'Excel dosyası başarıyla çözümlendi.' });
+        resolve(analyzeParsedData(result));
       } catch (err) {
-        console.error(err);
-        setStatus({ type: 'error', message: 'Excel ayrıştırılırken bir hata oluştu. Şablonu kontrol edin.' });
-      } finally {
-        setLoading(false);
+        reject(err);
       }
     };
-
+    reader.onerror = reject;
     reader.readAsArrayBuffer(file);
-  };
+  });
+}
 
-  const analyzeParsedData = (sheets) => {
-    // 1. Kimlik & Genetik
-    const kimlikSheet = sheets['1-Kimlik_Genetik'] || [];
-    const kimlik = {};
-    let geneticNote = '';
+function analyzeParsedData(sheets) {
+  const kimlikSheet = sheets['1-Kimlik_Genetik'] || [];
+  const kimlik = {};
+  let geneticNote = '';
 
-    kimlikSheet.forEach(row => {
-      if (!row || row.length === 0) return;
-      const key = row[0]?.toString()?.trim();
-      const val = row[1];
-      
-      if (key === 'Doğum Tarihi') kimlik.birthDate = val;
-      if (key === 'Kategori') kimlik.category = val;
-      if (key === 'Baba Boyu') kimlik.fatherHeight = val;
-      if (key === 'Anne Boyu') kimlik.motherHeight = val;
-      if (key === 'Tahmini Erişkin Boy') kimlik.targetHeight = val;
-      if (key === 'Alerji') kimlik.allergy = val;
-      
-      // Look for notes in row[3] (index 3)
-      if (row[3]) {
-        geneticNote = row[3];
-      }
-    });
+  kimlikSheet.forEach(row => {
+    if (!row || row.length === 0) return;
+    const key = row[0]?.toString()?.trim();
+    const val = row[1];
+    if (key === 'Doğum Tarihi') kimlik.birthDate = val;
+    if (key === 'Kategori') kimlik.category = val;
+    if (key === 'Baba Boyu') kimlik.fatherHeight = val;
+    if (key === 'Anne Boyu') kimlik.motherHeight = val;
+    if (key === 'Tahmini Erişkin Boy') kimlik.targetHeight = val;
+    if (key === 'Alerji') kimlik.allergy = val;
+    if (row[3]) geneticNote = row[3];
+  });
 
-    // Check title/header for full name
-    const headerRow = kimlikSheet[0];
-    const fullName = headerRow ? headerRow[0]?.toString()?.split('|')[0]?.trim() : 'Bilinmeyen Sporcu';
+  const headerRow = kimlikSheet[0];
+  const fullName = headerRow ? headerRow[0]?.toString()?.split('|')[0]?.trim() : 'Bilinmeyen Sporcu';
 
-    // 2. Antropometri
-    const antropometriSheet = sheets['2-Antropometri'] || [];
-    const measurements = [];
-    const headers = antropometriSheet[0] || [];
+  const antropometriSheet = sheets['2-Antropometri'] || [];
+  const measurements = [];
+  for (let i = 1; i < antropometriSheet.length; i++) {
+    const row = antropometriSheet[i];
+    if (row && row[0]) measurements.push({ metric: row[0], val2025: row[1], val2026: row[2], change: row[3], comment: row[4] });
+  }
+
+  const teknikSheet = sheets['3-Teknik_Analiz'] || [];
+  const teknikSkills = [];
+  for (let i = 1; i < teknikSheet.length; i++) {
+    const row = teknikSheet[i];
+    if (row && row[0]) teknikSkills.push({ name: row[0], status: row[1], analysis: row[2] });
+  }
+
+  const taktikSheet = sheets['4-Taktik_Mental_Fiziksel'] || sheets['4-Taktik_Mental'] || [];
+  const taktikSkills = [];
+  for (let i = 1; i < taktikSheet.length; i++) {
+    const row = taktikSheet[i];
+    if (row && row[0]) taktikSkills.push({ name: row[0], status: row[1], analysis: row[2] });
+  }
+
+  const coachSheet = sheets['5-Coach_Report'] || [];
+  const coachReport = {};
+  for (let i = 0; i < coachSheet.length; i += 2) {
+    const titleRow = coachSheet[i];
+    const textRow = coachSheet[i + 1];
+    if (titleRow && textRow) coachReport[titleRow[0]] = textRow[0];
+  }
+
+  const hedeflerSheet = sheets['6-Takip_Hedefler'] || [];
+  const goalsList = [];
+  const trackingList = [];
+  
+  let isGoalsSection = false;
+  for (let i = 1; i < hedeflerSheet.length; i++) {
+    const row = hedeflerSheet[i];
+    if (!row || row.length === 0) continue;
     
-    // We assume rows 1 onwards are measurements (Boy, Kilo, Kulaç, Bel, Omuz, Bacak)
-    for (let i = 1; i < antropometriSheet.length; i++) {
-      const row = antropometriSheet[i];
-      if (row && row[0]) {
-        measurements.push({
-          metric: row[0],
-          val2025: row[1],
-          val2026: row[2],
-          change: row[3],
-          comment: row[4]
-        });
-      }
+    const firstCell = row[0]?.toString()?.trim();
+    if (!firstCell) continue;
+    
+    if (firstCell === 'Alan') {
+      isGoalsSection = true;
+      continue;
     }
-
-    // 3. Teknik Analiz
-    const teknikSheet = sheets['3-Teknik_Analiz'] || [];
-    const teknikSkills = [];
-    for (let i = 1; i < teknikSheet.length; i++) {
-      const row = teknikSheet[i];
-      if (row && row[0]) {
-        teknikSkills.push({
-          name: row[0],
-          status: row[1],
-          analysis: row[2]
-        });
-      }
-    }
-
-    // 4. Taktik & Mental
-    const taktikSheet = sheets['4-Taktik_Mental'] || [];
-    const taktikSkills = [];
-    for (let i = 1; i < taktikSheet.length; i++) {
-      const row = taktikSheet[i];
-      if (row && row[0]) {
-        taktikSkills.push({
-          name: row[0],
-          status: row[1],
-          analysis: row[2]
-        });
-      }
-    }
-
-    // 5. Coach Report
-    const coachSheet = sheets['5-Coach_Report'] || [];
-    const coachReport = {};
-    for (let i = 0; i < coachSheet.length; i += 2) {
-      const titleRow = coachSheet[i];
-      const textRow = coachSheet[i + 1];
-      if (titleRow && textRow) {
-        coachReport[titleRow[0]] = textRow[0];
-      }
-    }
-
-    // 6. Takip Hedefler
-    const hedeflerSheet = sheets['6-Takip_Hedefler'] || [];
-    const goalsList = [];
-    for (let i = 1; i < hedeflerSheet.length; i++) {
-      const row = hedeflerSheet[i];
-      if (row && row[0]) {
-        goalsList.push({
-          category: row[0],
-          title: row[1]
-        });
-      }
-    }
-
-    return {
-      fullName,
-      kimlik,
-      geneticNote,
-      measurements,
-      teknikSkills,
-      taktikSkills,
-      coachReport,
-      goalsList
-    };
-  };
-
-  const handleSaveToDatabase = async () => {
-    if (!parsedData) return;
-    setLoading(true);
-    setStatus({ type: '', message: '' });
-
-    const newPlayerId = Date.now().toString(); // unique ID simulation
-
-    if (isSupabaseConfigured) {
-      try {
-        // 1. Create Supabase profile/player
-        const { data: player, error: playerError } = await supabase
-          .from('profiles')
-          .insert({
-            full_name: parsedData.fullName,
-            role: 'student',
-            birth_date: parsedData.kimlik.birthDate,
-            position: '1 (Oyun Kurucu)', // Default
-            jersey_number: 0, // Default cover number
-            status: 'active'
-          })
-          .select()
-          .single();
-
-        if (playerError) throw playerError;
-
-        // 2. Insert genetics
-        const { error: genError } = await supabase.from('genetics').insert({
-          player_id: player.id,
-          father_height: parseFloat(parsedData.kimlik.fatherHeight) || 0,
-          mother_height: parseFloat(parsedData.kimlik.motherHeight) || 0,
-          genetics_note: parsedData.geneticNote
-        });
-        if (genError) throw genError;
-
-        // 3. Insert antropometri
-        const anthroInserts = parsedData.measurements.map(m => ({
-          player_id: player.id,
-          metric: m.metric,
-          val_2025: m.val2025?.toString(),
-          val_2026: m.val2026?.toString(),
-          change_val: m.change,
-          comment: m.comment
-        }));
-        const { error: anthroError } = await supabase.from('antropometri').insert(anthroInserts);
-        if (anthroError) throw anthroError;
-
-        // 4. Insert skills (teknik + taktik)
-        const skillInserts = [
-          ...parsedData.teknikSkills.map(s => ({
-            player_id: player.id,
-            name: s.name,
-            type: 'teknik',
-            rating: s.status,
-            analysis: s.analysis
-          })),
-          ...parsedData.taktikSkills.map(s => ({
-            player_id: player.id,
-            name: s.name,
-            type: 'taktik',
-            rating: s.status,
-            analysis: s.analysis
-          }))
-        ];
-        const { error: skillsError } = await supabase.from('skills').insert(skillInserts);
-        if (skillsError) throw skillsError;
-
-        // 5. Insert Coach Report
-        const { error: coachError } = await supabase.from('coach_reports').insert({
-          player_id: player.id,
-          report_data: parsedData.coachReport,
-          author: 'Yunus Emre Pekel'
-        });
-        if (coachError) throw coachError;
-
-        // 6. Insert goals
-        const goalInserts = parsedData.goalsList.map(g => ({
-          player_id: player.id,
-          category: g.category,
-          title: g.title,
-          status: 'active'
-        }));
-        const { error: goalsError } = await supabase.from('goals').insert(goalInserts);
-        if (goalsError) throw goalsError;
-
-        setStatus({ type: 'success', message: `Sporcu "${parsedData.fullName}" başarıyla Supabase veritabanına aktarıldı!` });
-      } catch (err) {
-        console.error(err);
-        setStatus({ type: 'error', message: err.message || 'Veritabanına yazılırken bir hata oluştu.' });
-      } finally {
-        setLoading(false);
+    
+    if (isGoalsSection) {
+      if (row[0] && row[1]) {
+        goalsList.push({ category: row[0]?.toString()?.trim(), title: row[1]?.toString()?.trim() });
       }
     } else {
-      // Local Database (LocalStorage simulation)
-      try {
-        const db = localDb.get();
-        
-        if (!db.profiles) db.profiles = [];
-        if (!db.genetics) db.genetics = [];
-        if (!db.antropometri) db.antropometri = [];
-        if (!db.skills) db.skills = [];
-        if (!db.coach_reports) db.coach_reports = [];
-        if (!db.goals) db.goals = [];
-
-        const newProfile = {
-          id: newPlayerId,
-          email: `${parsedData.fullName.toLowerCase().replace(/ /g, '')}@atletik.com`,
-          password: '0', // Default password is 0
-          fullName: parsedData.fullName,
-          jerseyNumber: 0,
-          role: 'student',
-          birthDate: parsedData.kimlik.birthDate,
-          category: parsedData.kimlik.category,
-          avatarUrl: null
-        };
-
-        db.profiles.push(newProfile);
-
-        db.genetics.push({
-          playerId: newPlayerId,
-          fatherHeight: parsedData.kimlik.fatherHeight,
-          motherHeight: parsedData.kimlik.motherHeight,
-          note: parsedData.geneticNote
+      if (firstCell && (firstCell.includes('.') || firstCell.includes('-') || !isNaN(Date.parse(firstCell)))) {
+        trackingList.push({
+          date: row[0]?.toString()?.trim(),
+          heightCm: row[1] ? row[1].toString() : '',
+          weightKg: row[2] ? row[2].toString() : '',
+          kulac: row[3] ? row[3].toString() : '',
+          bel: row[4] ? row[4].toString() : '',
+          omuz: row[5] ? row[5].toString() : '',
+          bacak: row[6] ? row[6].toString() : '',
+          note: row[7] ? row[7].toString() : ''
         });
-
-        const newAnthro = parsedData.measurements.map(m => ({
-          playerId: newPlayerId,
-          date: '2026-07-17',
-          metric: m.metric,
-          val2025: m.val2025,
-          val2026: m.val2026,
-          change: m.change,
-          comment: m.comment
-        }));
-        db.antropometri = db.antropometri.concat(newAnthro);
-
-        const newSkills = [
-          ...parsedData.teknikSkills.map(s => ({ ...s, playerId: newPlayerId, type: 'teknik' })),
-          ...parsedData.taktikSkills.map(s => ({ ...s, playerId: newPlayerId, type: 'taktik' }))
-        ];
-        db.skills = db.skills.concat(newSkills);
-
-        db.coach_reports.push({
-          playerId: newPlayerId,
-          report: parsedData.coachReport
-        });
-
-        const newGoals = parsedData.goalsList.map(g => ({
-          playerId: newPlayerId,
-          category: g.category,
-          title: g.title,
-          status: 'active'
-        }));
-        db.goals = db.goals.concat(newGoals);
-
-        localDb.set(db);
-        
-        setStatus({ 
-          type: 'success', 
-          message: `Sporcu "${parsedData.fullName}" local depolamaya kaydedildi! Öğrenci Giriş: ${newProfile.email} / şifre (forma no): 0` 
-        });
-      } catch (err) {
-        console.error(err);
-        setStatus({ type: 'error', message: 'Yerel veritabanına yazma başarısız oldu.' });
-      } finally {
-        setLoading(false);
       }
     }
+  }
+
+  return { fullName, kimlik, geneticNote, measurements, teknikSkills, taktikSkills, coachReport, goalsList, trackingList };
+}
+
+function sanitizeAndHydrate(player) {
+  const defaultAnthro = ['Boy', 'Kilo', 'Kulaç', 'Bel', 'Omuz', 'Bacak'];
+  
+  const kimlik = {
+    birthDate: player.kimlik?.birthDate || player.birthDate || '01.01.2016',
+    category: player.kimlik?.category || player.category || 'U9/U10',
+    fatherHeight: player.kimlik?.fatherHeight || player.fatherHeight || '—',
+    motherHeight: player.kimlik?.motherHeight || player.motherHeight || '—',
+    targetHeight: player.kimlik?.targetHeight || player.targetHeight || '—',
+    allergy: player.kimlik?.allergy || player.allergy || 'Yok',
+  };
+
+  // Build measurements
+  let measurements = [];
+  if (Array.isArray(player.measurements)) {
+    measurements = [...player.measurements];
+  } else if (player.antropometri) {
+    Object.keys(player.antropometri).forEach(metric => {
+      const item = player.antropometri[metric];
+      measurements.push({
+        metric,
+        val2025: item.val2025 !== undefined ? item.val2025 : '—',
+        val2026: item.val2026 !== undefined ? item.val2026 : '—',
+        change: item.change !== undefined ? item.change : '—',
+        comment: item.comment || ''
+      });
+    });
+  }
+
+  // Ensure default antropometri metrics are present
+  defaultAnthro.forEach(metric => {
+    if (!measurements.some(m => m.metric?.toLowerCase() === metric.toLowerCase())) {
+      measurements.push({
+        metric,
+        val2025: '—',
+        val2026: '—',
+        change: '—',
+        comment: ''
+      });
+    }
+  });
+
+  // Skills
+  let teknikSkills = player.teknikSkills || [];
+  let taktikSkills = player.taktikSkills || [];
+  if (Array.isArray(player.skills)) {
+    player.skills.forEach(s => {
+      if (s.type === 'teknik') teknikSkills.push(s);
+      else if (s.type === 'taktik') taktikSkills.push(s);
+    });
+  }
+
+  const defaultTeknik = ['Sol El Gelişimi', 'Sağ El Bitirişleri', 'Şut Mekaniği', 'Top Advance', 'Skip & Go', 'Ball Handling', 'Akselerasyon/Deselerasyon'];
+  defaultTeknik.forEach(name => {
+    if (!teknikSkills.some(s => s.name?.toLowerCase() === name.toLowerCase())) {
+      teknikSkills.push({ name, status: '🟡', analysis: '' });
+    }
+  });
+
+  const defaultTaktik = ['Basketbol IQ', 'Yardım Savunması', 'Liderlik', 'Mücadele Gücü', 'Temaslı Oyun', 'Savunma Kimliği'];
+  defaultTaktik.forEach(name => {
+    if (!taktikSkills.some(s => s.name?.toLowerCase() === name.toLowerCase())) {
+      taktikSkills.push({ name, status: '🟢', analysis: '' });
+    }
+  });
+
+  // Coach Report
+  const coachReport = player.coachReport || player.coach_reports || {
+    'Genel Sezon Değerlendirmesi': '',
+    'Teknik ve Oyun Kimliği': '',
+    'Liderlik ve Takım Kültürü': '',
+    'Mental Profil': '',
+    'Gelecek Sezon Beklentisi': ''
+  };
+
+  // Goals
+  let goalsList = [];
+  if (Array.isArray(player.goalsList)) {
+    goalsList = player.goalsList;
+  } else if (Array.isArray(player.goals)) {
+    goalsList = player.goals.map(g => ({ category: g.category || 'Teknik', title: g.title || g.description || '' }));
+  }
+
+  // Tracking List
+  let trackingList = [];
+  if (Array.isArray(player.trackingList)) {
+    trackingList = player.trackingList;
+  } else if (Array.isArray(player.tracking)) {
+    trackingList = player.tracking;
+  }
+
+  return {
+    fullName: player.fullName || 'Bilinmeyen Sporcu',
+    kimlik,
+    geneticNote: player.geneticNote || player.geneticsNote || '',
+    measurements,
+    teknikSkills,
+    taktikSkills,
+    coachReport,
+    goalsList,
+    trackingList,
+    position: player.position,
+    jerseyNumber: player.jerseyNumber,
+    dominantHand: player.dominantHand
+  };
+}
+
+async function saveToDatabase(parsedData) {
+  const newPlayerId = Date.now().toString() + Math.random().toString(36).slice(2, 6);
+
+  if (isSupabaseConfigured) {
+    const { data: player, error: playerError } = await supabase
+      .from('profiles')
+      .insert({ full_name: parsedData.fullName, role: 'student', birth_date: parsedData.kimlik.birthDate, position: parsedData.position || '1 (Oyun Kurucu)', jersey_number: parsedData.jerseyNumber || 0, status: 'active' })
+      .select().single();
+    if (playerError) throw playerError;
+
+    const { error: genError } = await supabase.from('genetics').insert({ player_id: player.id, father_height: parseFloat(parsedData.kimlik.fatherHeight) || 0, mother_height: parseFloat(parsedData.kimlik.motherHeight) || 0, genetics_note: parsedData.geneticNote });
+    if (genError) throw genError;
+
+    const anthroInserts = parsedData.measurements.map(m => ({ player_id: player.id, metric: m.metric, val_2025: m.val2025?.toString(), val_2026: m.val2026?.toString(), change_val: m.change, comment: m.comment }));
+    if (anthroInserts.length) { const { error } = await supabase.from('antropometri').insert(anthroInserts); if (error) throw error; }
+
+    const skillInserts = [
+      ...parsedData.teknikSkills.map(s => ({ player_id: player.id, name: s.name, type: 'teknik', rating: s.status, analysis: s.analysis })),
+      ...parsedData.taktikSkills.map(s => ({ player_id: player.id, name: s.name, type: 'taktik', rating: s.status, analysis: s.analysis }))
+    ];
+    if (skillInserts.length) { const { error } = await supabase.from('skills').insert(skillInserts); if (error) throw error; }
+
+    const { error: coachError } = await supabase.from('coach_reports').insert({ player_id: player.id, report_data: parsedData.coachReport, author: 'Yunus Emre Pekel' });
+    if (coachError) throw coachError;
+
+    const goalInserts = parsedData.goalsList.map(g => ({ player_id: player.id, category: g.category, title: g.title, status: 'active' }));
+    if (goalInserts.length) { const { error } = await supabase.from('goals').insert(goalInserts); if (error) throw error; }
+
+  } else {
+    const db = localDb.get();
+    if (!db.profiles) db.profiles = [];
+    if (!db.genetics) db.genetics = [];
+    if (!db.antropometri) db.antropometri = [];
+    if (!db.skills) db.skills = [];
+    if (!db.coach_reports) db.coach_reports = [];
+    if (!db.goals) db.goals = [];
+    if (!db.physicalMeasurements) db.physicalMeasurements = [];
+
+    const email = `${parsedData.fullName.toLowerCase().replace(/\s+/g, '')}@atletik.com`;
+    
+    // Remove if player already exists to prevent duplicate profiles during imports
+    db.profiles = db.profiles.filter(p => p.fullName?.toLowerCase() !== parsedData.fullName?.toLowerCase());
+    
+    db.profiles.push({ id: newPlayerId, email, password: '10', fullName: parsedData.fullName, jerseyNumber: parsedData.jerseyNumber || 10, role: 'student', birthDate: parsedData.kimlik.birthDate, category: parsedData.kimlik.category, avatarUrl: null, status: 'active', position: parsedData.position || '1 – Oyun Kurucu', dominantHand: parsedData.dominantHand || 'right' });
+    db.genetics.push({ playerId: newPlayerId, fatherHeight: parsedData.kimlik.fatherHeight, motherHeight: parsedData.kimlik.motherHeight, targetHeight: parsedData.kimlik.targetHeight, note: parsedData.geneticNote, allergy: parsedData.kimlik.allergy });
+    db.antropometri = db.antropometri.concat(parsedData.measurements.map(m => ({ playerId: newPlayerId, date: new Date().toISOString().slice(0, 10), ...m })));
+    db.skills = db.skills.concat([
+      ...parsedData.teknikSkills.map(s => ({ ...s, playerId: newPlayerId, type: 'teknik' })),
+      ...parsedData.taktikSkills.map(s => ({ ...s, playerId: newPlayerId, type: 'taktik' }))
+    ]);
+    db.coach_reports.push({ playerId: newPlayerId, report: parsedData.coachReport });
+    db.goals = db.goals.concat(parsedData.goalsList.map(g => ({ playerId: newPlayerId, ...g, status: 'active' })));
+    
+    // Save physical tracking history
+    db.physicalMeasurements = db.physicalMeasurements.concat(parsedData.trackingList.map(t => ({ playerId: newPlayerId, ...t })));
+    
+    localDb.set(db);
+  }
+}
+
+const STATUS = { WAITING: 'waiting', PARSING: 'parsing', SAVING: 'saving', DONE: 'done', ERROR: 'error' };
+
+export default function ExcelImport() {
+  const inputRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('excel'); // 'excel' | 'gpt'
+  const [fileList, setFileList] = useState([]); // [{file, name, status, error, parsed}]
+  const [running, setRunning] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  // GPT Wizard States
+  const [gptJson, setGptJson] = useState('');
+  const [gptStatus, setGptStatus] = useState({ type: '', message: '' }); // type: 'success' | 'error' | 'loading' | ''
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyPrompt = () => {
+    navigator.clipboard.writeText(CHATGPT_PROMPT_TEMPLATE);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleGptImport = async () => {
+    if (!gptJson.trim()) {
+      setGptStatus({ type: 'error', message: 'Lütfen ChatGPT\'den aldığınız JSON verisini yapıştırın.' });
+      return;
+    }
+
+    setGptStatus({ type: 'loading', message: 'Veriler ayrıştırılıyor ve kaydediliyor...' });
+
+    try {
+      // Find JSON block if ChatGPT wrapped it in markdown code fences
+      let jsonText = gptJson.trim();
+      if (jsonText.includes('```')) {
+        const matches = jsonText.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
+        if (matches && matches[1]) {
+          jsonText = matches[1].trim();
+        }
+      }
+
+      let parsed = JSON.parse(jsonText);
+      
+      // If it is a single object, convert to array
+      if (!Array.isArray(parsed)) {
+        parsed = [parsed];
+      }
+
+      if (parsed.length === 0) {
+        setGptStatus({ type: 'error', message: 'Yapıştırılan veri boş bir dizi içeriyor.' });
+        return;
+      }
+
+      let importedCount = 0;
+      for (const rawPlayer of parsed) {
+        const hydrated = sanitizeAndHydrate(rawPlayer);
+        await saveToDatabase(hydrated);
+        importedCount++;
+      }
+
+      setGptStatus({
+        type: 'success',
+        message: `Başarılı! ${importedCount} sporcu başarıyla sisteme aktarıldı.`
+      });
+      setGptJson('');
+    } catch (err) {
+      console.error(err);
+      setGptStatus({
+        type: 'error',
+        message: 'Hata: Geçersiz JSON formatı. Lütfen ChatGPT çıktısının geçerli bir JSON olduğundan emin olun. Detay: ' + err.message
+      });
+    }
+  };
+
+  const addFiles = (newFiles) => {
+    const arr = Array.from(newFiles).filter(f => f.name.match(/\.xlsx?$/i));
+    if (!arr.length) return;
+    setFileList(prev => {
+      const existingNames = new Set(prev.map(x => x.name));
+      const toAdd = arr.filter(f => !existingNames.has(f.name)).map(f => ({ file: f, name: f.name, status: STATUS.WAITING, error: null, parsed: null }));
+      return [...prev, ...toAdd];
+    });
+  };
+
+  const removeFile = (name) => setFileList(prev => prev.filter(f => f.name !== name));
+  const clearAll = () => { setFileList([]); if (inputRef.current) inputRef.current.value = ''; };
+
+  const handleDrop = (e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); };
+  const handleDragOver = (e) => { e.preventDefault(); setDragOver(true); };
+  const handleDragLeave = () => setDragOver(false);
+
+  const updateFile = (name, patch) => {
+    setFileList(prev => prev.map(f => f.name === name ? { ...f, ...patch } : f));
+  };
+
+  const handleStartUpload = async () => {
+    const waiting = fileList.filter(f => f.status === STATUS.WAITING || f.status === STATUS.ERROR);
+    if (!waiting.length) return;
+    setRunning(true);
+
+    for (const item of waiting) {
+      // 1. Parse
+      updateFile(item.name, { status: STATUS.PARSING, error: null });
+      let parsed;
+      try {
+        parsed = await parseExcelFile(item.file);
+        updateFile(item.name, { status: STATUS.SAVING, parsed });
+      } catch (err) {
+        updateFile(item.name, { status: STATUS.ERROR, error: 'Excel okunamadı: ' + (err.message || 'Bilinmeyen hata') });
+        continue;
+      }
+
+      // 2. Save
+      try {
+        await saveToDatabase(parsed);
+        updateFile(item.name, { status: STATUS.DONE });
+      } catch (err) {
+        updateFile(item.name, { status: STATUS.ERROR, error: 'Kayıt hatası: ' + (err.message || 'Bilinmeyen hata') });
+      }
+    }
+
+    setRunning(false);
+  };
+
+  const doneCount = fileList.filter(f => f.status === STATUS.DONE).length;
+  const errorCount = fileList.filter(f => f.status === STATUS.ERROR).length;
+  const waitingCount = fileList.filter(f => f.status === STATUS.WAITING).length;
+  const activeCount = fileList.filter(f => f.status === STATUS.PARSING || f.status === STATUS.SAVING).length;
+
+  const statusIcon = (status) => {
+    if (status === STATUS.DONE) return <CheckCircle size={16} style={{ color: 'var(--c-green)', flexShrink: 0 }} />;
+    if (status === STATUS.ERROR) return <AlertTriangle size={16} style={{ color: 'var(--c-red)', flexShrink: 0 }} />;
+    if (status === STATUS.PARSING || status === STATUS.SAVING) return <Loader2 size={16} className="animate-spin" style={{ color: 'var(--c-primary)', flexShrink: 0 }} />;
+    return <FileSpreadsheet size={16} style={{ color: 'var(--c-text-3)', flexShrink: 0 }} />;
+  };
+
+  const statusLabel = (item) => {
+    if (item.status === STATUS.DONE) return <span style={{ fontSize: '0.7rem', color: 'var(--c-green)' }}>✓ {item.parsed?.fullName || 'Tamamlandı'}</span>;
+    if (item.status === STATUS.ERROR) return <span style={{ fontSize: '0.7rem', color: 'var(--c-red)' }}>{item.error}</span>;
+    if (item.status === STATUS.PARSING) return <span style={{ fontSize: '0.7rem', color: 'var(--c-primary)' }}>Okunuyor...</span>;
+    if (item.status === STATUS.SAVING) return <span style={{ fontSize: '0.7rem', color: 'var(--c-primary)' }}>Kaydediliyor...</span>;
+    return <span style={{ fontSize: '0.7rem', color: 'var(--c-text-3)' }}>Bekliyor</span>;
   };
 
   return (
-    <div style={{ maxWidth: 840, margin: '0 auto' }}>
+    <div style={{ maxWidth: 860, margin: '0 auto' }}>
       <div className="page-header">
         <div className="page-header-left">
-          <h1>Excel'den Veri İthalatı</h1>
-          <p>Oyuncu gelişim Excel dosyasını seçerek sporcuyu sisteme ekleyin.</p>
+          <h1>Veri Aktarım Merkezi</h1>
+          <p>Excel dosyalarını yükleyin veya ChatGPT kullanarak düz metin listelerinizi anında içe aktarın.</p>
         </div>
       </div>
 
-      <div className="grid-1-2">
-        {/* Upload card */}
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title">Dosya Seçin</div>
-          </div>
-          
-          <div style={{
-            border: '2px dashed var(--c-border-2)',
-            borderRadius: 'var(--r-lg)',
-            padding: 'var(--space-8)',
-            textAlign: 'center',
+      {/* Tabs */}
+      <div style={{
+        display: 'flex',
+        background: 'var(--c-surface-2)',
+        borderRadius: 'var(--r-lg)',
+        padding: 4,
+        marginBottom: 'var(--space-6)',
+        border: '1px solid var(--c-border-2)'
+      }}>
+        <button
+          onClick={() => setActiveTab('excel')}
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '10px 16px',
+            borderRadius: 'var(--r-md)',
+            border: 'none',
+            background: activeTab === 'excel' ? 'var(--c-primary)' : 'transparent',
+            color: activeTab === 'excel' ? '#fff' : 'var(--c-text-3)',
+            fontWeight: 700,
+            fontSize: '0.875rem',
             cursor: 'pointer',
-            background: 'rgba(255,255,255,0.02)',
-            position: 'relative'
-          }}>
-            <input 
-              type="file" 
-              accept=".xlsx, .xls"
-              onChange={handleFileChange}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                opacity: 0,
-                cursor: 'pointer'
-              }}
+            transition: 'all 0.2s'
+          }}
+        >
+          <FileSpreadsheet size={16} /> Excel Dosyası Yükle
+        </button>
+        <button
+          onClick={() => setActiveTab('gpt')}
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '10px 16px',
+            borderRadius: 'var(--r-md)',
+            border: 'none',
+            background: activeTab === 'gpt' ? 'var(--c-primary)' : 'transparent',
+            color: activeTab === 'gpt' ? '#fff' : 'var(--c-text-3)',
+            fontWeight: 700,
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Sparkles size={16} /> ChatGPT Hızlı Aktarım
+        </button>
+      </div>
+
+      {activeTab === 'excel' ? (
+        <div>
+          {/* Drop Zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => !running && inputRef.current?.click()}
+            style={{
+              border: `2px dashed ${dragOver ? 'var(--c-primary)' : 'var(--c-border-2)'}`,
+              borderRadius: 'var(--r-lg)',
+              padding: 'var(--space-8)',
+              textAlign: 'center',
+              cursor: running ? 'not-allowed' : 'pointer',
+              background: dragOver ? 'rgba(255,107,53,0.05)' : 'rgba(255,255,255,0.02)',
+              transition: 'all 0.2s',
+              marginBottom: 'var(--space-5)',
+              position: 'relative'
+            }}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              multiple
+              onChange={e => addFiles(e.target.files)}
+              style={{ display: 'none' }}
+              disabled={running}
             />
-            <FileUp size={48} style={{ color: 'var(--c-primary)', marginBottom: 'var(--space-4)' }} />
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 6 }}>
-              {file ? file.name : 'Excel Dosyasını Sürükleyin veya Tıklayın'}
+            <Upload size={40} style={{ color: dragOver ? 'var(--c-primary)' : 'var(--c-text-3)', marginBottom: 12, transition: 'color 0.2s' }} />
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 6, color: '#fff' }}>
+              Excel Dosyalarını Sürükleyin veya Tıklayın
             </h3>
-            <p style={{ fontSize: '0.75rem', color: 'var(--c-text-3)' }}>
-              Desteklenen formatlar: .xlsx, .xls
+            <p style={{ fontSize: '0.78rem', color: 'var(--c-text-3)' }}>
+              Birden fazla .xlsx veya .xls dosyası seçebilirsiniz
             </p>
           </div>
 
-          {status.message && (
-            <div style={{
-              marginTop: 'var(--space-4)',
-              background: status.type === 'success' ? 'rgba(39,174,96,0.15)' : 'rgba(239,68,68,0.15)',
-              border: `1px solid ${status.type === 'success' ? 'rgba(39,174,96,0.3)' : 'rgba(239,68,68,0.3)'}`,
-              color: status.type === 'success' ? 'var(--c-green)' : 'var(--c-red)',
-              borderRadius: 'var(--r-md)',
-              padding: '10px 14px',
-              fontSize: '0.8rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}>
-              {status.type === 'success' ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
-              {status.message}
+          {/* File List */}
+          {fileList.length > 0 && (
+            <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{fileList.length} Dosya</span>
+                  {doneCount > 0 && <span style={{ fontSize: '0.75rem', background: 'rgba(39,174,96,0.15)', color: 'var(--c-green)', padding: '2px 8px', borderRadius: 20 }}>✓ {doneCount} Tamamlandı</span>}
+                  {errorCount > 0 && <span style={{ fontSize: '0.75rem', background: 'rgba(239,68,68,0.15)', color: 'var(--c-red)', padding: '2px 8px', borderRadius: 20 }}>✕ {errorCount} Hata</span>}
+                  {waitingCount > 0 && <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--c-text-2)', padding: '2px 8px', borderRadius: 20 }}>⏳ {waitingCount} Bekliyor</span>}
+                </div>
+                {!running && (
+                  <button className="btn btn-ghost" onClick={clearAll} style={{ fontSize: '0.75rem', padding: '4px 10px' }}>
+                    Temizle
+                  </button>
+                )}
+              </div>
+
+              {/* Progress bar */}
+              {running || doneCount > 0 ? (
+                <div style={{ background: 'var(--c-surface-3)', borderRadius: 8, height: 6, marginBottom: 'var(--space-4)', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${(doneCount / fileList.length) * 100}%`,
+                    background: 'linear-gradient(90deg, var(--c-primary), var(--c-accent))',
+                    borderRadius: 8,
+                    transition: 'width 0.4s ease'
+                  }} />
+                </div>
+              ) : null}
+
+              {/* File rows */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {fileList.map(item => (
+                  <div key={item.name} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '10px 12px',
+                    borderRadius: 'var(--r-md)',
+                    background: item.status === STATUS.DONE
+                      ? 'rgba(39,174,96,0.07)'
+                      : item.status === STATUS.ERROR
+                        ? 'rgba(239,68,68,0.07)'
+                        : item.status === STATUS.PARSING || item.status === STATUS.SAVING
+                          ? 'rgba(255,107,53,0.07)'
+                          : 'var(--c-surface-3)',
+                    border: `1px solid ${item.status === STATUS.DONE ? 'rgba(39,174,96,0.2)' : item.status === STATUS.ERROR ? 'rgba(239,68,68,0.2)' : 'transparent'}`,
+                    transition: 'all 0.3s'
+                  }}>
+                    {statusIcon(item.status)}
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                      {statusLabel(item)}
+                    </div>
+                    {!running && item.status !== STATUS.PARSING && item.status !== STATUS.SAVING && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeFile(item.name); }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--c-text-3)', padding: 4, display: 'flex', alignItems: 'center' }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          {parsedData && (
-            <button 
-              className="btn btn-primary" 
-              onClick={handleSaveToDatabase}
-              disabled={loading}
-              style={{ width: '100%', justifyContent: 'center', marginTop: 'var(--space-4)', padding: '12px' }}
+          {/* Action Buttons */}
+          {fileList.length > 0 && (
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                className="btn btn-primary"
+                onClick={handleStartUpload}
+                disabled={running || waitingCount === 0 && errorCount === 0}
+                style={{ flex: 1, justifyContent: 'center', padding: '13px' }}
+              >
+                {running ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} />
+                    {activeCount > 0 ? `İşleniyor... (${doneCount}/${fileList.length})` : 'Yükleniyor...'}
+                  </>
+                ) : (
+                  <>
+                    <PlayCircle size={16} style={{ marginRight: 8 }} />
+                    {errorCount > 0 && waitingCount === 0
+                      ? `Hatalıları Tekrar Dene (${errorCount})`
+                      : `${waitingCount + errorCount} Sporcuyu Sisteme Yükle`}
+                  </>
+                )}
+              </button>
+              {!running && fileList.length > 0 && (
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => inputRef.current?.click()}
+                  style={{ padding: '13px 20px' }}
+                >
+                  <Upload size={16} style={{ marginRight: 6 }} /> Dosya Ekle
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {fileList.length === 0 && (
+            <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--c-text-3)', fontSize: '0.85rem' }}>
+              <FileSpreadsheet size={32} style={{ marginBottom: 8, opacity: 0.4 }} />
+              <p>Henüz dosya eklenmedi.<br />Her sporcu için ayrı bir Excel dosyası hazırlayıp yukarıya sürükleyin.</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="card">
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, marginBottom: 12, color: 'var(--c-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>🧠</span> ChatGPT ile Hızlı Aktarma Sihirbazı
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--c-text-2)', lineHeight: 1.6, marginBottom: 20 }}>
+            WhatsApp grupları, el yazısı notları veya diğer karışık metin listelerini ChatGPT yardımıyla sisteme sıfır eforla toplu aktarın.
+          </p>
+
+          {/* Step 1 */}
+          <div style={{ marginBottom: 20 }}>
+            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: 8, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ display: 'inline-flex', width: 20, height: 20, borderRadius: '50%', background: 'var(--c-primary)', color: '#fff', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800 }}>1</span>
+              Aşağıdaki Talimat Şablonunu Kopyalayın
+            </h4>
+            <p style={{ fontSize: '0.75rem', color: 'var(--c-text-3)', marginBottom: 8 }}>
+              Bu promptu kopyalayıp ChatGPT'ye yapıştırın ve altına elinizdeki düz metin listeyi ekleyerek gönderin.
+            </p>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={handleCopyPrompt}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  position: 'absolute',
+                  top: 10,
+                  right: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 12px',
+                  fontSize: '0.75rem',
+                  background: 'var(--c-surface-3)',
+                  border: '1px solid var(--c-border)',
+                  zIndex: 10
+                }}
+              >
+                {copied ? <Check size={12} style={{ color: 'var(--c-green)' }} /> : <Copy size={12} />}
+                {copied ? 'Kopyalandı!' : 'Şablonu Kopyala'}
+              </button>
+              <pre style={{
+                background: 'var(--c-surface-3)',
+                border: '1px solid var(--c-border-2)',
+                borderRadius: 'var(--r-md)',
+                padding: '12px 14px',
+                paddingTop: 45,
+                maxHeight: 150,
+                overflowY: 'auto',
+                fontSize: '0.75rem',
+                fontFamily: 'monospace',
+                color: 'var(--c-text-2)',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all'
+              }}>
+                {CHATGPT_PROMPT_TEMPLATE}
+              </pre>
+            </div>
+          </div>
+
+          {/* Step 2 & 3 */}
+          <div style={{ marginBottom: 20 }}>
+            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: 8, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ display: 'inline-flex', width: 20, height: 20, borderRadius: '50%', background: 'var(--c-primary)', color: '#fff', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800 }}>2</span>
+              ChatGPT Çıktısını Buraya Yapıştırın ve Aktarın
+            </h4>
+            <p style={{ fontSize: '0.75rem', color: 'var(--c-text-3)', marginBottom: 8 }}>
+              ChatGPT'nin size verdiği JSON kodunu kopyalayıp aşağıdaki alana yapıştırın.
+            </p>
+            <textarea
+              value={gptJson}
+              onChange={e => setGptJson(e.target.value)}
+              placeholder={`ChatGPT'nin verdiği JSON çıktısını buraya yapıştırın...\nörn:\n[\n  {\n    "fullName": "Ahmet Yılmaz",\n    "category": "U12"\n  }\n]`}
+              style={{
+                width: '100%',
+                height: 180,
+                background: 'var(--c-surface-3)',
+                border: '1px solid var(--c-border-2)',
+                borderRadius: 'var(--r-md)',
+                padding: 12,
+                fontSize: '0.8rem',
+                fontFamily: 'monospace',
+                color: '#fff',
+                resize: 'vertical',
+                marginBottom: 12
+              }}
+            />
+
+            {/* Status alerts */}
+            {gptStatus.type === 'error' && (
+              <div style={{
+                display: 'flex', gap: 8, alignItems: 'center',
+                background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.25)',
+                color: 'var(--c-red)', borderRadius: 'var(--r-md)', padding: 12, fontSize: '0.8rem', marginBottom: 12
+              }}>
+                <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                <span>{gptStatus.message}</span>
+              </div>
+            )}
+
+            {gptStatus.type === 'success' && (
+              <div style={{
+                display: 'flex', gap: 8, alignItems: 'center',
+                background: 'rgba(39, 174, 96, 0.12)', border: '1px solid rgba(39, 174, 96, 0.25)',
+                color: 'var(--c-green)', borderRadius: 'var(--r-md)', padding: 12, fontSize: '0.8rem', marginBottom: 12
+              }}>
+                <CheckCircle size={16} style={{ flexShrink: 0 }} />
+                <span>{gptStatus.message}</span>
+              </div>
+            )}
+
+            {gptStatus.type === 'loading' && (
+              <div style={{
+                display: 'flex', gap: 8, alignItems: 'center',
+                background: 'rgba(255, 107, 53, 0.12)', border: '1px solid rgba(255, 107, 53, 0.25)',
+                color: 'var(--c-primary)', borderRadius: 'var(--r-md)', padding: 12, fontSize: '0.8rem', marginBottom: 12
+              }}>
+                <Loader2 size={16} className="animate-spin" style={{ flexShrink: 0 }} />
+                <span>{gptStatus.message}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleGptImport}
+              className="btn btn-primary"
+              disabled={gptStatus.type === 'loading' || !gptJson.trim()}
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                padding: '13px',
+                fontSize: '0.875rem'
+              }}
             >
-              {loading ? (
+              {gptStatus.type === 'loading' ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} />
-                  Veritabanına Aktarılıyor...
+                  <Loader2 size={16} className="animate-spin" style={{ marginRight: 8 }} /> Sporcular Kaydediliyor...
                 </>
               ) : (
                 <>
-                  <RefreshCw size={16} style={{ marginRight: 8 }} />
-                  Verileri Sisteme Kaydet
+                  <PlayCircle size={16} style={{ marginRight: 8 }} /> Sporcuları Sisteme Aktar
                 </>
               )}
             </button>
-          )}
-        </div>
-
-        {/* Parsed Preview card */}
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title">Önizleme</div>
           </div>
-          
-          {parsedData ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-              <div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--c-primary)', fontWeight: 700 }}>SPORCU ADI</span>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff' }}>{parsedData.fullName}</h3>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--c-text-3)' }}>Doğum Tarihi</span>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{parsedData.kimlik.birthDate || '—'}</div>
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--c-text-3)' }}>Kategori</span>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{parsedData.kimlik.category || '—'}</div>
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--c-text-3)' }}>Baba Boyu</span>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{parsedData.kimlik.fatherHeight || '—'}</div>
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--c-text-3)' }}>Anne Boyu</span>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{parsedData.kimlik.motherHeight || '—'}</div>
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--c-border)', paddingTop: 'var(--space-3)' }}>
-                <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: 8 }}>Tespit Edilen Veri Sayıları</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  <span style={{ background: 'var(--c-surface-3)', padding: '4px 8px', borderRadius: 4, fontSize: '0.75rem' }}>
-                    📏 {parsedData.measurements.length} Ölçüm
-                  </span>
-                  <span style={{ background: 'var(--c-surface-3)', padding: '4px 8px', borderRadius: 4, fontSize: '0.75rem' }}>
-                    🏀 {parsedData.teknikSkills.length} Teknik
-                  </span>
-                  <span style={{ background: 'var(--c-surface-3)', padding: '4px 8px', borderRadius: 4, fontSize: '0.75rem' }}>
-                    🧠 {parsedData.taktikSkills.length} Taktik
-                  </span>
-                  <span style={{ background: 'var(--c-surface-3)', padding: '4px 8px', borderRadius: 4, fontSize: '0.75rem' }}>
-                    🎯 {parsedData.goalsList.length} Hedef
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{
-              textAlign: 'center',
-              padding: 'var(--space-8)',
-              color: 'var(--c-text-3)',
-              fontSize: '0.85rem'
-            }}>
-              Ayrıştırılan verilerin özeti burada görünecektir.
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

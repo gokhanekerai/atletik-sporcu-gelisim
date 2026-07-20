@@ -1,13 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  LayoutDashboard, Users, Trophy, Dumbbell, BarChart2,
-  FileText, Settings, ChevronLeft, ChevronRight, User
+  LayoutDashboard, Users,
+  FileText, Settings, ChevronLeft, ChevronRight, User, Upload
 } from 'lucide-react';
 
 import { useState } from 'react';
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen, setMobileOpen }) {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
@@ -19,11 +19,8 @@ export default function Sidebar() {
     ? [
         { to: '/', icon: LayoutDashboard, key: 'dashboard', exact: true },
         { to: '/players', icon: Users, key: 'players' },
-        { to: '/matches', icon: Trophy, key: 'matches' },
-        { to: '/training', icon: Dumbbell, key: 'training' },
-        { to: '/stats', icon: BarChart2, key: 'stats' },
         { to: '/reports', icon: FileText, key: 'reports' },
-        { to: '/excel-import', icon: FileText, key: 'excelImport', label: 'Excel İthalatı' },
+        { to: '/excel-import', icon: Upload, key: 'excelImport' },
         { to: '/settings', icon: Settings, key: 'settings' },
       ]
     : [
@@ -32,7 +29,7 @@ export default function Sidebar() {
 
 
   return (
-    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
+    <aside className={`sidebar${collapsed ? ' collapsed' : ''}${mobileOpen ? ' mobile-open' : ''}`}>
       {/* Logo */}
       <div className="sidebar-logo">
         <div className="sidebar-logo-icon">
@@ -54,6 +51,7 @@ export default function Sidebar() {
             end={exact}
             className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
             data-tooltip={collapsed ? (label || t(`nav.${key}`)) : undefined}
+            onClick={() => setMobileOpen(false)}
           >
             <span className="nav-link-icon"><Icon size={18} /></span>
             <span className="nav-link-text">{label || t(`nav.${key}`)}</span>

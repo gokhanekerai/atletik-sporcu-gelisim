@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "BasketTrack",
+    "name": "ATLETİKPLUS",
     "tagline": "Athlete Development Tracking System"
   },
   "nav": {
@@ -10,19 +10,32 @@
     "training": "Training",
     "stats": "Statistics",
     "reports": "Reports",
+    "excelImport": "Data Import",
     "settings": "Settings"
   },
   "dashboard": {
     "welcome": "Welcome",
-    "overview": "Overview",
-    "totalPlayers": "Total Players",
-    "activeTeams": "Active Teams",
-    "matchesThisSeason": "Season Matches",
-    "avgTeamScore": "Avg Team Score",
-    "recentMatches": "Recent Matches",
-    "upcomingTraining": "Upcoming Training",
-    "topPerformers": "Top Performers",
-    "noUpcoming": "No upcoming events"
+    "coach": "Coach",
+    "title": "ATLETİKPLUS Athlete Development Tracking System",
+    "subtitle": "Season 2025-26 • {{count}} athlete profiles • Development tracking dashboard",
+    "cardTotalPlayers": "Total Registered Athletes",
+    "cardTotalPlayersDesc": "All students defined in the system",
+    "cardActivePlayers": "Active Athletes",
+    "cardActivePlayersDesc": "Those continuing training",
+    "cardTotalReports": "Total Reports",
+    "cardTotalReportsDesc": "Coach development reports",
+    "cardTotalMeasurements": "Total Measurements",
+    "cardTotalMeasurementsDesc": "Anthropometric data records",
+    "categoryDistribution": "Category Distribution",
+    "recentlyAdded": "Recently Added Athletes",
+    "noPlayersYet": "No athletes added yet.",
+    "viewAll": "All →",
+    "athlete": "athlete",
+    "guideTitle": "💡 Coach Quick Usage Guide",
+    "addNewAthlete": "Add New Athlete",
+    "manualInput": "Manual Data Entry",
+    "guideText1": "page and record new students using the \"Add New Athlete\" button.",
+    "guideText2": "Click on the athlete's name to go to the detail page. There, you can manually update the athlete's genetics, anthropometrics, technique, tactics, and goals using the 6 editing tabs."
   },
   "player": {
     "profile": "Profile",
