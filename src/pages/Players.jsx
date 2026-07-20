@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, Filter, Plus, ChevronRight, X, Trash2, Save, Sparkles } from 'lucide-react';
-import { localDb } from '../lib/supabase';
+import { localDb, supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const initials = name => name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
 
@@ -160,10 +160,25 @@ export default function Players() {
   };
 
   // Delete player profiles
-  const handleDeletePlayer = (playerId, e) => {
+  const handleDeletePlayer = async (playerId, e) => {
     e.stopPropagation();
     if (!window.confirm('Bu sporcuyu ve sporcuyla ilgili tüm Excel verilerini silmek istediğinize emin misiniz?')) {
       return;
+    }
+
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from('profiles').delete().eq('id', playerId);
+        if (error) {
+          console.error('Supabase delete error:', error);
+          alert('Buluttan silinirken hata oluştu: ' + error.message);
+          return;
+        }
+      } catch(err) {
+        console.error('Supabase delete exception:', err);
+        alert('Buluttan silinirken bir sorun oluştu.');
+        return;
+      }
     }
 
     const currentDb = localDb.get();
