@@ -175,21 +175,26 @@ export async function syncFromSupabase() {
         window.dispatchEvent(new Event('auth-changed'));
         return;
       }
-      db.profiles = profiles.map(p => ({
-        id: p.id,
-        fullName: p.full_name,
-        role: p.role,
-        birthDate: p.birth_date,
-        position: p.position,
-        category: p.category,
-        dominantHand: p.dominant_hand,
-        bio: p.bio,
-        jerseyNumber: p.jersey_number,
-        status: p.status,
-        avatarUrl: p.avatar_url,
-        email: p.email,
-        password: p.password
-      }));
+      // Smart merge: preserve local non-null values when cloud returns null
+      const existingProfiles = db.profiles || [];
+      db.profiles = profiles.map(p => {
+        const local = existingProfiles.find(lp => lp.id === p.id) || {};
+        return {
+          id: p.id,
+          fullName: p.full_name || local.fullName,
+          role: p.role || local.role,
+          birthDate: p.birth_date ?? local.birthDate,
+          position: p.position ?? local.position,
+          category: p.category ?? local.category,
+          dominantHand: p.dominant_hand ?? local.dominantHand,
+          bio: p.bio ?? local.bio,
+          jerseyNumber: p.jersey_number ?? local.jerseyNumber,
+          status: p.status || local.status || 'active',
+          avatarUrl: p.avatar_url ?? local.avatarUrl,
+          email: p.email ?? local.email,
+          password: p.password ?? local.password,
+        };
+      });
     }
 
     // 2. Fetch genetics
@@ -269,6 +274,8 @@ export async function syncFromSupabase() {
 
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(db));
     window.dispatchEvent(new Event('auth-changed'));
+    // Push merged data back to Supabase to fill in any fields that were null in cloud (e.g. category)
+    await syncToSupabase(db);
     console.log('Database synced from Supabase successfully.');
   } catch (err) {
     console.error('Failed to sync database from Supabase:', err);
