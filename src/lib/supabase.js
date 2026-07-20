@@ -144,9 +144,224 @@ try {
   }
 } catch(e) { console.warn('Deduplication/seed sync failed:', e); }
 
+export async function syncFromSupabase() {
+  if (!isSupabaseConfigured) return;
+  console.log('Syncing database from Supabase cloud...');
+  try {
+    const db = localDb.get();
+    
+    // 1. Fetch profiles
+    const { data: profiles, error: pError } = await supabase.from('profiles').select('*');
+    if (!pError && profiles) {
+      db.profiles = profiles.map(p => ({
+        id: p.id,
+        fullName: p.full_name,
+        role: p.role,
+        birthDate: p.birth_date,
+        position: p.position,
+        jerseyNumber: p.jersey_number,
+        status: p.status,
+        avatarUrl: p.avatar_url,
+        email: p.email,
+        password: p.password
+      }));
+    }
+
+    // 2. Fetch genetics
+    const { data: genetics, error: gError } = await supabase.from('genetics').select('*');
+    if (!gError && genetics) {
+      db.genetics = genetics.map(g => ({
+        playerId: g.player_id,
+        fatherHeight: g.father_height,
+        mother_height: g.mother_height,
+        targetHeight: g.target_height,
+        note: g.genetics_note,
+        allergy: g.allergy
+      }));
+    }
+
+    // 3. Fetch antropometri
+    const { data: antropometri, error: aError } = await supabase.from('antropometri').select('*');
+    if (!aError && antropometri) {
+      db.antropometri = antropometri.map(a => ({
+        playerId: a.player_id,
+        date: a.date,
+        metric: a.metric,
+        val2025: a.val_2025,
+        val2026: a.val_2026,
+        change: a.change_val,
+        comment: a.comment
+      }));
+    }
+
+    // 4. Fetch skills
+    const { data: skills, error: sError } = await supabase.from('skills').select('*');
+    if (!sError && skills) {
+      db.skills = skills.map(s => ({
+        playerId: s.player_id,
+        name: s.name,
+        type: s.type,
+        status: s.rating,
+        analysis: s.analysis
+      }));
+    }
+
+    // 5. Fetch coach reports
+    const { data: coachReports, error: cError } = await supabase.from('coach_reports').select('*');
+    if (!cError && coachReports) {
+      db.coach_reports = coachReports.map(r => ({
+        playerId: r.player_id,
+        report: r.report_data
+      }));
+    }
+
+    // 6. Fetch goals
+    const { data: goals, error: goError } = await supabase.from('goals').select('*');
+    if (!goError && goals) {
+      db.goals = goals.map(g => ({
+        playerId: g.player_id,
+        category: g.category,
+        title: g.title,
+        status: g.status
+      }));
+    }
+
+    // 7. Fetch physical measurements (tracking)
+    const { data: physicalMeasurements, error: pmError } = await supabase.from('physical_measurements').select('*');
+    if (!pmError && physicalMeasurements) {
+      db.physicalMeasurements = physicalMeasurements.map(pm => ({
+        playerId: pm.player_id,
+        date: pm.date,
+        heightCm: pm.height_cm,
+        weightKg: pm.weight_kg,
+        kulac: pm.kulac,
+        bel: pm.bel,
+        omuz: pm.omuz,
+        bacak: pm.bacak,
+        note: pm.note
+      }));
+    }
+
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(db));
+    window.dispatchEvent(new Event('auth-changed'));
+    console.log('Database synced from Supabase successfully.');
+  } catch (err) {
+    console.error('Failed to sync database from Supabase:', err);
+  }
+}
+
+export async function syncToSupabase(db) {
+  if (!isSupabaseConfigured) return;
+  if (localStorage.getItem('user_id') === 'admin') return; // Do not sync demo account edits to live DB
+  
+  console.log('Syncing database updates to Supabase cloud...');
+  try {
+    // 1. Sync profiles
+    if (db.profiles && db.profiles.length > 0) {
+      const mappedProfiles = db.profiles.map(p => ({
+        id: p.id,
+        full_name: p.fullName || 'Bilinmeyen',
+        role: p.role || 'student',
+        birth_date: p.birthDate,
+        position: p.position,
+        jersey_number: p.jerseyNumber || 0,
+        status: p.status || 'active',
+        avatar_url: p.avatarUrl,
+        email: p.email,
+        password: p.password
+      }));
+      await supabase.from('profiles').upsert(mappedProfiles);
+    }
+
+    // 2. Sync genetics
+    if (db.genetics && db.genetics.length > 0) {
+      const mappedGenetics = db.genetics.map(g => ({
+        player_id: g.playerId,
+        father_height: g.fatherHeight,
+        mother_height: g.motherHeight,
+        target_height: g.targetHeight,
+        genetics_note: g.note,
+        allergy: g.allergy
+      }));
+      await supabase.from('genetics').upsert(mappedGenetics);
+    }
+
+    // 3. Sync antropometri
+    if (db.antropometri && db.antropometri.length > 0) {
+      const mappedAntro = db.antropometri.map(a => ({
+        player_id: a.playerId,
+        date: a.date,
+        metric: a.metric,
+        val_2025: a.val2025?.toString(),
+        val_2026: a.val2026?.toString(),
+        change_val: a.change?.toString(),
+        comment: a.comment
+      }));
+      await supabase.from('antropometri').upsert(mappedAntro);
+    }
+
+    // 4. Sync skills
+    if (db.skills && db.skills.length > 0) {
+      const mappedSkills = db.skills.map(s => ({
+        player_id: s.playerId,
+        name: s.name,
+        type: s.type,
+        rating: s.status,
+        analysis: s.analysis
+      }));
+      await supabase.from('skills').upsert(mappedSkills);
+    }
+
+    // 5. Sync coach reports
+    if (db.coach_reports && db.coach_reports.length > 0) {
+      const mappedReports = db.coach_reports.map(r => ({
+        player_id: r.playerId,
+        report_data: r.report
+      }));
+      await supabase.from('coach_reports').upsert(mappedReports);
+    }
+
+    // 6. Sync goals
+    if (db.goals && db.goals.length > 0) {
+      const mappedGoals = db.goals.map(g => ({
+        player_id: g.playerId,
+        category: g.category,
+        title: g.title,
+        status: g.status || 'active'
+      }));
+      await supabase.from('goals').upsert(mappedGoals);
+    }
+
+    // 7. Sync physical measurements (tracking)
+    if (db.physicalMeasurements && db.physicalMeasurements.length > 0) {
+      const mappedPM = db.physicalMeasurements.map(pm => ({
+        player_id: pm.playerId,
+        date: pm.date,
+        height_cm: pm.heightCm?.toString(),
+        weight_kg: pm.weightKg?.toString(),
+        kulac: pm.kulac?.toString(),
+        bel: pm.bel?.toString(),
+        omuz: pm.omuz?.toString(),
+        bacak: pm.bacak?.toString(),
+        note: pm.note
+      }));
+      await supabase.from('physical_measurements').upsert(mappedPM);
+    }
+    
+    console.log('Database synced to Supabase successfully.');
+  } catch (err) {
+    console.error('Failed to sync updates to Supabase:', err);
+  }
+}
+
 export const localDb = {
   get: () => JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}'),
-  set: (data) => localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data)),
+  set: (data) => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+    if (isSupabaseConfigured) {
+      syncToSupabase(data);
+    }
+  },
   clear: () => localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defaultDb)),
 };
 

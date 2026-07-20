@@ -10,6 +10,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import ExcelImport from './pages/ExcelImport';
+import { isSupabaseConfigured, syncFromSupabase } from './lib/supabase';
 
 export default function App() {
   const [authState, setAuthState] = useState({
@@ -19,6 +20,12 @@ export default function App() {
   });
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (isSupabaseConfigured && authState.isAuth) {
+      syncFromSupabase();
+    }
+  }, [authState.isAuth]);
 
   useEffect(() => {
     const handleAuthChange = () => {
