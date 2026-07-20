@@ -19,9 +19,10 @@ export default function Login() {
     setLoading(true);
 
     const isDemoAdmin = email === 'admin@atletik.com' && password === 'admin123';
+    const isDemoSuperAdmin = email === 'superadmin@atletik.com' && password === 'super123';
     const isDemoStudent = email === 'ogrenci@atletik.com' && password === '7';
 
-    if (isSupabaseConfigured && !isDemoAdmin && !isDemoStudent) {
+    if (isSupabaseConfigured && !isDemoAdmin && !isDemoSuperAdmin && !isDemoStudent) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -42,7 +43,7 @@ export default function Login() {
         localStorage.setItem('user_id', profile.id);
         window.dispatchEvent(new Event('auth-changed'));
         
-        if (profile.role === 'admin') {
+        if (profile.role === 'admin' || profile.role === 'super_admin') {
           navigate('/');
         } else {
           navigate(`/players/${profile.id}`);
@@ -62,8 +63,13 @@ export default function Login() {
             localStorage.setItem('user_id', 'admin');
             window.dispatchEvent(new Event('auth-changed'));
             navigate('/');
+          } else if (email === 'superadmin@atletik.com' && password === 'super123') {
+            localStorage.setItem('user_role', 'super_admin');
+            localStorage.setItem('user_id', 'super_admin');
+            window.dispatchEvent(new Event('auth-changed'));
+            navigate('/');
           } else {
-            setError('Geçersiz admin bilgileri. (Demo: admin@atletik.com / admin123)');
+            setError('Geçersiz admin bilgileri. (Demo: admin@atletik.com / admin123) veya (Süper: superadmin@atletik.com / super123)');
           }
         } else {
           // Student login: find matching player from localDb profiles/players

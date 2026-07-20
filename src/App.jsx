@@ -64,7 +64,7 @@ export default function App() {
           <Header onMenuClick={() => setMobileSidebarOpen(true)} />
           <main className="page-content">
             <Routes>
-              {userRole === 'admin' ? (
+              {userRole === 'admin' || userRole === 'super_admin' ? (
                 <>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/players" element={<Players />} />

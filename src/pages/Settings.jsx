@@ -196,59 +196,61 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Database */}
-        <div className="card">
-          <div className="card-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-              <div style={{
-                width: 36, height: 36, background: 'rgba(167,139,250,0.15)',
-                borderRadius: 'var(--r-md)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--c-purple)',
-              }}><Database size={18} /></div>
-              <div>
-                <div className="card-title">Veritabanı Bağlantısı</div>
-                <div className="card-subtitle">Supabase entegrasyonu</div>
+        {/* Database (Only visible to super_admin) */}
+        {localStorage.getItem('user_role') === 'super_admin' && (
+          <div className="card">
+            <div className="card-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <div style={{
+                  width: 36, height: 36, background: 'rgba(167,139,250,0.15)',
+                  borderRadius: 'var(--r-md)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--c-purple)',
+                }}><Database size={18} /></div>
+                <div>
+                  <div className="card-title">Veritabanı Bağlantısı</div>
+                  <div className="card-subtitle">Supabase entegrasyonu</div>
+                </div>
+              </div>
+            </div>
+            <div style={{
+              background: supabaseUrl && supabaseAnonKey ? 'rgba(39, 174, 96, 0.08)' : 'rgba(167,139,250,0.08)', 
+              border: `1px solid ${supabaseUrl && supabaseAnonKey ? 'rgba(39, 174, 96, 0.2)' : 'rgba(167,139,250,0.2)'}`,
+              borderRadius: 'var(--r-md)', padding: 'var(--space-4)',
+              fontSize: '0.875rem', color: 'var(--c-text-2)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: supabaseUrl && supabaseAnonKey ? 'var(--c-green)' : 'var(--c-yellow)' }} />
+                <strong style={{ color: supabaseUrl && supabaseAnonKey ? 'var(--c-green)' : 'var(--c-yellow)' }}>
+                  {supabaseUrl && supabaseAnonKey ? 'Supabase Canlı Mod' : 'Demo Modu (Yerel Hafıza)'}
+                </strong>
+              </div>
+              {supabaseUrl && supabaseAnonKey 
+                ? 'Uygulama aktif Supabase veritabanınıza bağlıdır. Verileriniz buluta canlı olarak kaydedilir.'
+                : 'Uygulama şu an yerel mock data (Local Storage) ile çalışmaktadır. Supabase bağlantısı için URL ve API anahtarlarınızı girin.'
+              }
+            </div>
+            <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Supabase URL</label>
+                <input 
+                  type="text" 
+                  placeholder="https://xxxx.supabase.co" 
+                  value={supabaseUrl}
+                  onChange={e => setSupabaseUrl(e.target.value)}
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Supabase Anon Key</label>
+                <input 
+                  type="password" 
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+                  value={supabaseAnonKey}
+                  onChange={e => setSupabaseAnonKey(e.target.value)}
+                />
               </div>
             </div>
           </div>
-          <div style={{
-            background: supabaseUrl && supabaseAnonKey ? 'rgba(39, 174, 96, 0.08)' : 'rgba(167,139,250,0.08)', 
-            border: `1px solid ${supabaseUrl && supabaseAnonKey ? 'rgba(39, 174, 96, 0.2)' : 'rgba(167,139,250,0.2)'}`,
-            borderRadius: 'var(--r-md)', padding: 'var(--space-4)',
-            fontSize: '0.875rem', color: 'var(--c-text-2)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: supabaseUrl && supabaseAnonKey ? 'var(--c-green)' : 'var(--c-yellow)' }} />
-              <strong style={{ color: supabaseUrl && supabaseAnonKey ? 'var(--c-green)' : 'var(--c-yellow)' }}>
-                {supabaseUrl && supabaseAnonKey ? 'Supabase Canlı Mod' : 'Demo Modu (Yerel Hafıza)'}
-              </strong>
-            </div>
-            {supabaseUrl && supabaseAnonKey 
-              ? 'Uygulama aktif Supabase veritabanınıza bağlıdır. Verileriniz buluta canlı olarak kaydedilir.'
-              : 'Uygulama şu an yerel mock data (Local Storage) ile çalışmaktadır. Supabase bağlantısı için URL ve API anahtarlarınızı girin.'
-            }
-          </div>
-          <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Supabase URL</label>
-              <input 
-                type="text" 
-                placeholder="https://xxxx.supabase.co" 
-                value={supabaseUrl}
-                onChange={e => setSupabaseUrl(e.target.value)}
-              />
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Supabase Anon Key</label>
-              <input 
-                type="password" 
-                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
-                value={supabaseAnonKey}
-                onChange={e => setSupabaseAnonKey(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* App Info */}
         <div style={{
