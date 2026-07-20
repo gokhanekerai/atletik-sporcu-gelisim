@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Filter, Plus, ChevronRight, X, Trash2, Save } from 'lucide-react';
+import { Search, Filter, Plus, ChevronRight, X, Trash2, Save, Sparkles } from 'lucide-react';
 import { localDb } from '../lib/supabase';
 
 const initials = name => name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
@@ -189,7 +189,10 @@ export default function Players() {
           <h1>Sporcular</h1>
           <p>{filtered.length} sporcu listelendi (Excel veri tabanlı)</p>
         </div>
-        <div className="page-header-actions">
+        <div className="page-header-actions" style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-secondary" onClick={() => navigate('/excel-import', { state: { tab: 'gpt' } })} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={16} style={{ color: 'var(--c-primary)' }} /> ChatGPT ile Hızlı Aktar
+          </button>
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
             <Plus size={16} /> Yeni Sporcu Ekle
           </button>

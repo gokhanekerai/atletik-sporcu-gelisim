@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Upload, CheckCircle, AlertTriangle, Loader2, X, 
   FileSpreadsheet, PlayCircle, Copy, Check, Sparkles 
@@ -332,8 +333,9 @@ async function saveToDatabase(parsedData) {
 const STATUS = { WAITING: 'waiting', PARSING: 'parsing', SAVING: 'saving', DONE: 'done', ERROR: 'error' };
 
 export default function ExcelImport() {
+  const location = useLocation();
   const inputRef = useRef(null);
-  const [activeTab, setActiveTab] = useState('excel'); // 'excel' | 'gpt'
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'excel'); // 'excel' | 'gpt'
   const [fileList, setFileList] = useState([]); // [{file, name, status, error, parsed}]
   const [running, setRunning] = useState(false);
   const [dragOver, setDragOver] = useState(false);
