@@ -17,6 +17,7 @@ export default function Players() {
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [newPlayer, setNewPlayer] = useState({
     fullName: '',
     email: '',
@@ -165,6 +166,8 @@ export default function Players() {
     if (!window.confirm('Bu sporcuyu ve sporcuyla ilgili tüm Excel verilerini silmek istediğinize emin misiniz?')) {
       return;
     }
+    
+    setDeletingId(playerId);
 
     if (isSupabaseConfigured) {
       try {
@@ -186,6 +189,7 @@ export default function Players() {
       } catch(err) {
         console.error('Supabase delete exception:', err);
         alert('Buluttan silinirken bir sorun oluştu.');
+        setDeletingId(null);
         return;
       }
     }
@@ -342,9 +346,14 @@ export default function Players() {
                 <button 
                   className="btn btn-ghost btn-sm" 
                   onClick={(e) => handleDeletePlayer(player.id, e)}
-                  style={{ marginRight: 8 }}
+                  disabled={deletingId === player.id}
+                  style={{ marginRight: 8, opacity: deletingId === player.id ? 0.5 : 1 }}
                 >
-                  <Trash2 size={16} style={{ color: 'var(--c-red)' }} />
+                  {deletingId === player.id ? (
+                    <span className="spinner" style={{ width: 16, height: 16, border: '2px solid var(--c-red)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <Trash2 size={16} style={{ color: 'var(--c-red)' }} />
+                  )}
                 </button>
 
                 <ChevronRight size={16} style={{ color: 'var(--c-text-3)', flexShrink: 0 }} />
