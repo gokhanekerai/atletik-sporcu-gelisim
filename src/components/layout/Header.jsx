@@ -83,7 +83,7 @@ export default function Header({ onMenuClick }) {
           title="Çıkış Yap"
         >
           <div className="header-avatar" style={{ background: 'var(--c-primary-dim)', color: 'var(--c-primary)' }}>
-            {localStorage.getItem('user_role') === 'admin' ? 'AD' : 'SP'}
+            {localStorage.getItem('user_role') === 'super_admin' ? 'SA' : (localStorage.getItem('user_role') === 'admin' ? 'AD' : 'SP')}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--c-text-2)', fontWeight: 600 }}>Çıkış</span>
         </div>

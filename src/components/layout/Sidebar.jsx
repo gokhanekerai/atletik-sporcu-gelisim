@@ -15,7 +15,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
   const userRole = localStorage.getItem('user_role') || 'admin';
   const studentId = localStorage.getItem('user_id') || '1';
 
-  const navItems = userRole === 'admin' 
+  const navItems = (userRole === 'admin' || userRole === 'super_admin')
     ? [
         { to: '/', icon: LayoutDashboard, key: 'dashboard', exact: true },
         { to: '/players', icon: Users, key: 'players' },
