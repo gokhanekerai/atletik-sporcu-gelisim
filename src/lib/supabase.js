@@ -153,9 +153,26 @@ export async function syncFromSupabase() {
     // 1. Fetch profiles
     const { data: profiles, error: pError } = await supabase.from('profiles').select('*');
     if (!pError && profiles) {
-      if (profiles.length === 0 && db.profiles && db.profiles.length > 0) {
-        console.log('Supabase database is empty. Seeding Supabase with local data...');
+      if (profiles.length === 0) {
+        if (!db.profiles || db.profiles.length === 0) {
+          console.log('Both local and cloud database are empty. Re-loading default seed data...');
+          db.profiles = [...(seedData.profiles || [])];
+          db.genetics = [...(seedData.genetics || [])];
+          db.antropometri = [...(seedData.antropometri || [])];
+          db.skills = [...(seedData.skills || [])];
+          db.coach_reports = [...(seedData.coach_reports || [])];
+          db.goals = [...(seedData.goals || [])];
+          db.physicalMeasurements = [...(seedData.physicalMeasurements || [])];
+          db.teams = [
+            { id: 1, name: 'Kocaeli Atletik U9/U10', category: 'U9/U10', season: '2025-26', color: '#FF6B35' },
+            { id: 2, name: 'Kocaeli Atletik U12', category: 'U12', season: '2025-26', color: '#4ECDC4' },
+            { id: 3, name: 'Kocaeli Atletik U14', category: 'U14', season: '2025-26', color: '#A78BFA' }
+          ];
+        }
+        console.log('Supabase database is empty. Seeding Supabase with local/seed data...');
         await syncToSupabase(db);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(db));
+        window.dispatchEvent(new Event('auth-changed'));
         return;
       }
       db.profiles = profiles.map(p => ({
