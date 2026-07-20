@@ -58,7 +58,7 @@ Eğer ham verilerde bazı bilgiler eksikse, kesinlikle boş ("") veya null bıra
 5. **coachReport**: Alanları boş bırakma, sporcunun profiline ve pozisyonuna uygun profesyonel koç diliyle değerlendirme cümleleri üret.
 
 Dönüştürülecek Ham Sporcu Verileri:
-[Buraya verilerinizi yapıştırın]\`;
+[Buraya verilerinizi yapıştırın]`;
 
 function parseExcelFile(file) {
   return new Promise((resolve, reject) => {
