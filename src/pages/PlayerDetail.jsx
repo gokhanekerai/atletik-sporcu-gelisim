@@ -15,6 +15,7 @@ export default function PlayerDetail() {
   const { t } = useTranslation();
   
   const userRole = localStorage.getItem('user_role') || 'admin';
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const effectivePlayerId = id || '';
 
   // Get raw DB state
@@ -38,7 +39,7 @@ export default function PlayerDetail() {
     { key: 'goals', label: 'Hedefler', icon: Target }
   ];
 
-  const tabs = userRole === 'admin' ? adminTabs : studentTabs;
+  const tabs = isAdmin ? adminTabs : studentTabs;
   const [activeTab, setActiveTab] = useState('report');
   const [saveStatus, setSaveStatus] = useState('');
 
@@ -139,7 +140,7 @@ export default function PlayerDetail() {
     <div className="empty-state">
       <div className="empty-state-icon">🏀</div>
       <p>Sporcu bulunamadı</p>
-      {userRole === 'admin' && (
+      {isAdmin && (
         <button className="btn btn-primary" onClick={() => navigate('/players')}>Geri Dön</button>
       )}
     </div>
@@ -333,7 +334,7 @@ export default function PlayerDetail() {
     <div>
       {/* HEADER ACTION AREA */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-        {userRole === 'admin' ? (
+        {isAdmin ? (
           <button className="btn btn-ghost btn-sm" onClick={() => navigate('/players')}
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <ArrowLeft size={16} /> Sporculara Dön
@@ -373,7 +374,7 @@ export default function PlayerDetail() {
               {!player.avatarUrl && initials(player.fullName)}
             </div>
             
-            {userRole === 'admin' && (
+            {isAdmin && (
               <label style={{
                 position: 'absolute', bottom: -5, right: -5,
                 background: 'var(--c-primary)', color: 'white',
@@ -401,7 +402,7 @@ export default function PlayerDetail() {
             </div>
           </div>
 
-          {userRole === 'admin' && (
+          {isAdmin && (
             <div style={{
               background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)',
               padding: '10px 14px', border: '1px solid rgba(255,255,255,0.03)',
