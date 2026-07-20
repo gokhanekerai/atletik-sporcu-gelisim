@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   Upload, CheckCircle, AlertTriangle, Loader2, X, 
-  FileSpreadsheet, PlayCircle, Copy, Check, Sparkles 
+  FileSpreadsheet, PlayCircle, Copy, Check, Sparkles, Download 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { isSupabaseConfigured, supabase, localDb } from '../lib/supabase';
@@ -345,6 +345,97 @@ export default function ExcelImport() {
   const [gptStatus, setGptStatus] = useState({ type: '', message: '' }); // type: 'success' | 'error' | 'loading' | ''
   const [copied, setCopied] = useState(false);
 
+  const handleDownloadTemplate = () => {
+    const wb = XLSX.utils.book_new();
+
+    // 1-Kimlik_Genetik
+    const ws1Data = [
+      ['Çınar Caner | Kocaeli Atletik Spor Kulübü'],
+      [],
+      ['Doğum Tarihi', '13.10.2017'],
+      ['Kategori', 'U9/U10'],
+      ['Baba Boyu', '182 cm'],
+      ['Anne Boyu', '175 cm'],
+      ['Tahmini Erişkin Boy', '183.5 ± 8 cm'],
+      ['Alerji', 'Var, net tanı bulunmuyor'],
+      [],
+      ['Genetik & Fiziksel Gelişim Yorumu:', '', '', 'Anne ve baba boy ortalaması yüksek atletik potansiyele işaret etmektedir. Uzun dönem takip önerilir.']
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
+    XLSX.utils.book_append_sheet(wb, ws1, '1-Kimlik_Genetik');
+
+    // 2-Antropometri
+    const ws2Data = [
+      ['Ölçüm Kriteri', '2025 Ölçümü', '2026 Ölçümü', 'Değişim', 'Gelişim Yorumu'],
+      ['Boy', 133, 135, '+2', 'Normal gelişim, genetik potansiyel yüksektir.'],
+      ['Kilo', 27, 30, '+3', 'Boy ile uyumlu artış.'],
+      ['Kulaç', '50*', 139, '-', '2025 ölçüm hatası, 2026 referans.'],
+      ['Bel', '23*', 65, '-', '2025 ölçüm hatası, 2026 referans.'],
+      ['Omuz', '12*', 35, '-', '2025 ölçüm hatası, 2026 referans.'],
+      ['Bacak', 75, 82, '+7', 'Olumlu alt ekstremite gelişimi.']
+    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+    XLSX.utils.book_append_sheet(wb, ws2, '2-Antropometri');
+
+    // 3-Teknik_Analiz
+    const ws3Data = [
+      ['Teknik Beceri', 'Durum (🟢/🟡/🔴)', 'Değerlendirme / Analiz'],
+      ['Sol El Gelişimi', '🟡', 'Sezonun ikinci yarısında belirgin gelişim göstermiştir ancak hâlâ ana gelişim alanlarından biridir.'],
+      ['Sağ El Bitirişleri', '🟢', 'Sağ el bitiriş repertuvarı sezon boyunca istikrarlı şekilde gelişmiştir.'],
+      ['Şut Mekaniği', '🟡', 'Şut mekaniğindeki dirsek açısı üzerine çalışılmaktadır.'],
+      ['Top Advance', '🟢', 'Top getirme ve sahayı geçme hızı oldukça yüksektir.'],
+      ['Skip & Go', '🟢', 'Bire birlerde yön değiştirme becerisi başarılıdır.'],
+      ['Ball Handling', '🟡', 'Özellikle sol el ve yön değiştirmelerde ek bireysel çalışma önerilir.'],
+      ['Akselerasyon/Deselerasyon', '🟢', 'Hızlanma ve ani yavaşlamalarda vücut koordinasyonu iyidir.']
+    ];
+    const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
+    XLSX.utils.book_append_sheet(wb, ws3, '3-Teknik_Analiz');
+
+    // 4-Taktik_Mental_Fiziksel
+    const ws4Data = [
+      ['Taktik / Mental / Fiziksel', 'Durum (🟢/🟡/🔴)', 'Değerlendirme / Analiz'],
+      ['Basketbol IQ', '🟢', 'Oyun görüşü ve saha içi karar alma becerisi yaş grubuna göre çok olumludur.'],
+      ['Yardım Savunması', '🟢', 'Yardım savunması rotasyonlarında doğru kararlar vermektedir.'],
+      ['Liderlik', '🟢', 'Takım arkadaşları üzerindeki etkisi ve saha içi yönlendirmesi olumludur.'],
+      ['Mücadele Gücü', '🟢', 'Ribaunt ve savunma mücadelelerinde istekli ve agresiftir.'],
+      ['Temaslı Oyun', '🟡', 'Temaslı bitirişlerde kuvvet gelişimi takip edilmelidir.'],
+      ['Savunma Kimliği', '🟢', 'Bire bir savunmada topa baskı ve konsantrasyonu yüksektir.']
+    ];
+    const ws4 = XLSX.utils.aoa_to_sheet(ws4Data);
+    XLSX.utils.book_append_sheet(wb, ws4, '4-Taktik_Mental_Fiziksel');
+
+    // 5-Coach_Report
+    const ws5Data = [
+      ['Genel Sezon Değerlendirmesi'],
+      ['Çınar Caner, sezon boyunca takımın en istikrarlı gelişim gösteren oyuncularından biri olmuştur.'],
+      ['Teknik ve Oyun Kimliği'],
+      ['Top getirme ve yönlendirmede başarılıdır.'],
+      ['Liderlik ve Takım Kültürü'],
+      ['Antrenman disiplini yüksek, arkadaşlarıyla uyumlu bir lider karakterdir.'],
+      ['Mental Profil'],
+      ['Maç konsantrasyonu yüksektir.'],
+      ['Gelecek Sezon Beklentisi'],
+      ['U12 kategorisinde lider oyun kurucu rolünü üstlenmesi hedeflenmektedir.']
+    ];
+    const ws5 = XLSX.utils.aoa_to_sheet(ws5Data);
+    XLSX.utils.book_append_sheet(wb, ws5, '5-Coach_Report');
+
+    // 6-Takip_Hedefler
+    const ws6Data = [
+      ['Tarih', 'Boy (cm)', 'Kilo (kg)', 'Kulaç (cm)', 'Bel (cm)', 'Omuz (cm)', 'Bacak (cm)', 'Takip Notu'],
+      ['17.07.2025', 133, 27, 135, 62, 33, 78, 'Ölçüm yapıldı.'],
+      ['17.07.2026', 135, 30, 139, 65, 35, 82, 'Ölçüm yapıldı.'],
+      [],
+      ['Alan', 'Hedef Açıklaması'],
+      ['Teknik', 'Sol el top sürüşü ve bitiriş profesyonelliğini artırmak'],
+      ['Zihinsel', 'Baskı altında pas tercihlerini geliştirmek']
+    ];
+    const ws6 = XLSX.utils.aoa_to_sheet(ws6Data);
+    XLSX.utils.book_append_sheet(wb, ws6, '6-Takip_Hedefler');
+
+    XLSX.writeFile(wb, 'atletik_sporcu_sablonu.xlsx');
+  };
+
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(CHATGPT_PROMPT_TEMPLATE);
     setCopied(true);
@@ -681,6 +772,14 @@ export default function ExcelImport() {
             <div style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--c-text-3)', fontSize: '0.85rem' }}>
               <FileSpreadsheet size={32} style={{ marginBottom: 8, opacity: 0.4 }} />
               <p>Henüz dosya eklenmedi.<br />Her sporcu için ayrı bir Excel dosyası hazırlayıp yukarıya sürükleyin.</p>
+              <button 
+                type="button"
+                className="btn btn-secondary btn-sm" 
+                onClick={handleDownloadTemplate}
+                style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Download size={14} /> Örnek Excel Şablonunu İndir
+              </button>
             </div>
           )}
         </div>
