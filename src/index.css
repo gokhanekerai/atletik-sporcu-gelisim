@@ -1,11 +1,11 @@
-/* ============================================================
+﻿/* ============================================================
    BasketTrack - Design System
-   Dark Mode • Glassmorphism • Basketball Theme
+   Dark Mode â€¢ Glassmorphism â€¢ Basketball Theme
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap');
 
-/* ── CSS Custom Properties ─────────────────────────────── */
+/* â”€â”€ CSS Custom Properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 :root {
   /* Colors */
   --c-bg:          #0A0E1A;
@@ -80,7 +80,7 @@
   --header-h: 64px;
 }
 
-/* ── Reset & Base ──────────────────────────────────────── */
+/* â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { scroll-behavior: smooth; font-size: 16px; }
@@ -121,13 +121,13 @@ input:focus, select:focus, textarea:focus {
 
 select option { background: var(--c-surface); }
 
-/* ── Scrollbar ─────────────────────────────────────────── */
+/* â”€â”€ Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--c-surface); }
 ::-webkit-scrollbar-thumb { background: var(--c-surface-3); border-radius: var(--r-full); }
 ::-webkit-scrollbar-thumb:hover { background: var(--c-text-3); }
 
-/* ── App Layout ────────────────────────────────────────── */
+/* â”€â”€ App Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #root { display: flex; height: 100vh; }
 
 .app-layout {
@@ -137,7 +137,7 @@ select option { background: var(--c-surface); }
   overflow: hidden;
 }
 
-/* ── Sidebar ───────────────────────────────────────────── */
+/* â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
@@ -294,7 +294,7 @@ select option { background: var(--c-surface); }
   display: none;
 }
 
-/* ── Main Content ──────────────────────────────────────── */
+/* â”€â”€ Main Content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .main-content {
   flex: 1;
   display: flex;
@@ -303,7 +303,7 @@ select option { background: var(--c-surface); }
   background: var(--c-bg);
 }
 
-/* ── Top Header ────────────────────────────────────────── */
+/* â”€â”€ Top Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .top-header {
   height: var(--header-h);
   min-height: var(--header-h);
@@ -395,7 +395,7 @@ select option { background: var(--c-surface); }
   box-shadow: var(--shadow-orange);
 }
 
-/* ── Page Content ──────────────────────────────────────── */
+/* â”€â”€ Page Content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .page-content {
   flex: 1;
   overflow-y: auto;
@@ -403,7 +403,7 @@ select option { background: var(--c-surface); }
   background: var(--g-hero);
 }
 
-/* ── Cards ─────────────────────────────────────────────── */
+/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .card {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -447,7 +447,7 @@ select option { background: var(--c-surface); }
   margin-top: 2px;
 }
 
-/* ── Stat Cards ────────────────────────────────────────── */
+/* â”€â”€ Stat Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .stat-card {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -507,7 +507,7 @@ select option { background: var(--c-surface); }
 .change-up { color: var(--c-green); }
 .change-down { color: var(--c-red); }
 
-/* ── Buttons ───────────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -572,7 +572,7 @@ select option { background: var(--c-surface); }
   border-radius: var(--r-md);
 }
 
-/* ── Badges ────────────────────────────────────────────── */
+/* â”€â”€ Badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -592,7 +592,7 @@ select option { background: var(--c-surface); }
 .badge-teal   { background: var(--c-accent-dim);   color: var(--c-accent); }
 .badge-purple { background: rgba(167,139,250,0.15); color: var(--c-purple); }
 
-/* ── Position Chips ────────────────────────────────────── */
+/* â”€â”€ Position Chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pos-chip {
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px;
@@ -608,7 +608,7 @@ select option { background: var(--c-surface); }
 .pos-PF { background: rgba(245,158,11,0.15); color: var(--c-yellow); }
 .pos-C  { background: rgba(52,211,153,0.15); color: var(--c-green); }
 
-/* ── Avatar ────────────────────────────────────────────── */
+/* â”€â”€ Avatar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .avatar {
   border-radius: var(--r-full);
   display: flex; align-items: center; justify-content: center;
@@ -624,7 +624,7 @@ select option { background: var(--c-surface); }
 .avatar-xl  { width: 80px;  height: 80px;  font-size: 1.4rem; }
 .avatar-2xl { width: 100px; height: 100px; font-size: 1.8rem; }
 
-/* ── Table ─────────────────────────────────────────────── */
+/* â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .table-wrapper {
   overflow-x: auto;
   border-radius: var(--r-lg);
@@ -667,7 +667,7 @@ tbody td {
   white-space: nowrap;
 }
 
-/* ── Progress Bar ──────────────────────────────────────── */
+/* â”€â”€ Progress Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .progress-bar {
   width: 100%;
   height: 6px;
@@ -697,14 +697,14 @@ tbody td {
   100% { transform: translateX(200%); }
 }
 
-/* ── Grid Layouts ──────────────────────────────────────── */
+/* â”€â”€ Grid Layouts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--space-5); }
 .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--space-5); }
 .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: var(--space-5); }
 .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: var(--space-5); }
 .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-5); }
 
-/* ── Page Header ───────────────────────────────────────── */
+/* â”€â”€ Page Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .page-header {
   display: flex;
   align-items: flex-start;
@@ -734,7 +734,7 @@ tbody td {
   flex-shrink: 0;
 }
 
-/* ── Tabs ──────────────────────────────────────────────── */
+/* â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tabs {
   display: flex;
   gap: var(--space-1);
@@ -767,7 +767,7 @@ tbody td {
   box-shadow: var(--shadow-sm);
 }
 
-/* ── Filters Bar ───────────────────────────────────────── */
+/* â”€â”€ Filters Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .filters-bar {
   display: flex;
   align-items: center;
@@ -787,7 +787,7 @@ tbody td {
   cursor: pointer;
 }
 
-/* ── Modal ─────────────────────────────────────────────── */
+/* â”€â”€ Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -844,7 +844,7 @@ tbody td {
   border-top: 1px solid var(--c-border);
 }
 
-/* ── Form ──────────────────────────────────────────────── */
+/* â”€â”€ Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .form-group {
   margin-bottom: var(--space-5);
 }
@@ -863,7 +863,7 @@ tbody td {
   gap: var(--space-4);
 }
 
-/* ── Toast ─────────────────────────────────────────────── */
+/* â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .toast-container {
   position: fixed;
   bottom: var(--space-6);
@@ -897,7 +897,7 @@ tbody td {
   to   { transform: translateX(0); opacity: 1; }
 }
 
-/* ── Recharts Customization ────────────────────────────── */
+/* â”€â”€ Recharts Customization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .recharts-tooltip-wrapper .recharts-default-tooltip {
   background: var(--c-surface-2) !important;
   border: 1px solid var(--c-border-2) !important;
@@ -910,7 +910,7 @@ tbody td {
   stroke: var(--c-border) !important;
 }
 
-/* ── Player Card ───────────────────────────────────────── */
+/* â”€â”€ Player Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .player-card {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -966,7 +966,7 @@ tbody td {
   font-size: 0.65rem;
 }
 
-/* ── Match Row ─────────────────────────────────────────── */
+/* â”€â”€ Match Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .match-result-badge {
   width: 28px; height: 28px;
   border-radius: var(--r-sm);
@@ -980,7 +980,7 @@ tbody td {
 .result-D { background: rgba(245,158,11,0.15);  color: var(--c-yellow); }
 .result-upcoming { background: var(--c-primary-dim); color: var(--c-primary); }
 
-/* ── Goal Progress ─────────────────────────────────────── */
+/* â”€â”€ Goal Progress â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .goal-card {
   background: var(--c-surface-2);
   border: 1px solid var(--c-border);
@@ -1021,7 +1021,7 @@ tbody td {
   margin-top: var(--space-2);
 }
 
-/* ── Empty State ───────────────────────────────────────── */
+/* â”€â”€ Empty State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -1036,7 +1036,7 @@ tbody td {
 .empty-state-icon { font-size: 3rem; opacity: 0.4; }
 .empty-state p { font-size: 0.875rem; }
 
-/* ── Animations ────────────────────────────────────────── */
+/* â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes pulse-orange {
   0%, 100% { box-shadow: 0 0 0 0 var(--c-primary-glow); }
   50%       { box-shadow: 0 0 0 10px transparent; }
@@ -1054,7 +1054,7 @@ tbody td {
   50%       { box-shadow: 0 0 0 6px transparent; }
 }
 
-/* ── Tooltip ───────────────────────────────────────────── */
+/* â”€â”€ Tooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-tooltip] {
   position: relative;
 }
@@ -1079,7 +1079,7 @@ tbody td {
 
 [data-tooltip]:hover::after { opacity: 1; }
 
-/* ── Responsive ────────────────────────────────────────── */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 1280px) {
   .grid-4 { grid-template-columns: repeat(2,1fr); }
   .page-content { padding: var(--space-6); }
@@ -1161,5 +1161,6 @@ tbody td {
     width: 100% !important;
   }
 }
-@ k e y f r a m e s   s p i n   {   1 0 0 %   {   t r a n s f o r m :   r o t a t e ( 3 6 0 d e g ) ;   }   }  
+@ k e y f r a m e s   s p i n   {   1 0 0 %   {   t r a n s f o r m :   r o t a t e ( 3 6 0 d e g ) ;   }   } 
+ 
  
