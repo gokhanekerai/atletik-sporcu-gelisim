@@ -153,6 +153,11 @@ export async function syncFromSupabase() {
     // 1. Fetch profiles
     const { data: profiles, error: pError } = await supabase.from('profiles').select('*');
     if (!pError && profiles) {
+      if (profiles.length === 0 && db.profiles && db.profiles.length > 0) {
+        console.log('Supabase database is empty. Seeding Supabase with local data...');
+        await syncToSupabase(db);
+        return;
+      }
       db.profiles = profiles.map(p => ({
         id: p.id,
         fullName: p.full_name,
