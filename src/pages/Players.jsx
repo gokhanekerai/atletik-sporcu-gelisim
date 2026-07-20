@@ -18,6 +18,7 @@ export default function Players() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [newPlayer, setNewPlayer] = useState({
     fullName: '',
     email: '',
@@ -161,12 +162,7 @@ export default function Players() {
   };
 
   // Delete player profiles
-  const handleDeletePlayer = async (playerId, e) => {
-    e.stopPropagation();
-    if (!window.confirm('Bu sporcuyu ve sporcuyla ilgili tüm Excel verilerini silmek istediğinize emin misiniz?')) {
-      return;
-    }
-    
+  const handleDeletePlayer = async (playerId) => {
     setDeletingId(playerId);
 
     if (isSupabaseConfigured) {
@@ -345,7 +341,10 @@ export default function Players() {
                 {/* Actions */}
                 <button 
                   className="btn btn-ghost btn-sm" 
-                  onClick={(e) => handleDeletePlayer(player.id, e)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmDeleteId(player.id);
+                  }}
                   disabled={deletingId === player.id}
                   style={{ marginRight: 8, opacity: deletingId === player.id ? 0.5 : 1 }}
                 >
@@ -360,6 +359,31 @@ export default function Players() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* CONFIRM DELETE MODAL */}
+      {confirmDeleteId && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'var(--c-bg)', padding: 'var(--space-4)', borderRadius: 'var(--radius-lg)',
+            width: '90%', maxWidth: 400, boxShadow: 'var(--shadow-lg)'
+          }}>
+            <h3 style={{ marginTop: 0, color: 'var(--c-red)' }}>Sporcuyu Sil</h3>
+            <p>Bu sporcuyu ve sporcuyla ilgili tüm verileri kalıcı olarak silmek istediğinize emin misiniz?</p>
+            <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)', justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost" onClick={() => setConfirmDeleteId(null)}>İptal</button>
+              <button className="btn btn-primary" style={{ background: 'var(--c-red)', borderColor: 'var(--c-red)' }} onClick={() => {
+                const id = confirmDeleteId;
+                setConfirmDeleteId(null);
+                handleDeletePlayer(id);
+              }}>Evet, Sil</button>
+            </div>
+          </div>
         </div>
       )}
 
