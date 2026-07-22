@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Search, Bell, Menu } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { isSupabaseConfigured } from '../../lib/supabase';
 
 const routeTitles = {
   '/': 'dashboard',
@@ -42,6 +43,27 @@ export default function Header({ onMenuClick }) {
         <div className="header-search">
           <Search size={14} className="header-search-icon" />
           <input type="text" placeholder={t('common.search')} />
+        </div>
+
+        {/* DB Connection Status Badge */}
+        <div 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 6, 
+            padding: '4px 10px', 
+            borderRadius: '12px', 
+            fontSize: '0.7rem', 
+            fontWeight: 700,
+            background: isSupabaseConfigured ? 'rgba(46, 204, 113, 0.15)' : 'rgba(241, 196, 15, 0.15)',
+            color: isSupabaseConfigured ? '#2ecc71' : '#f1c40f',
+            border: `1px solid ${isSupabaseConfigured ? 'rgba(46, 204, 113, 0.3)' : 'rgba(241, 196, 15, 0.3)'}`,
+            whiteSpace: 'nowrap'
+          }}
+          title={isSupabaseConfigured ? "Supabase Bulut Veritabanı Aktif" : "Çevrimdışı / Yerel Tarayıcı Depolaması Aktif"}
+        >
+          <span style={{ fontSize: '8px' }}>{isSupabaseConfigured ? '🟢' : '🟡'}</span>
+          {isSupabaseConfigured ? 'BULUT AKTİF' : 'YEREL DEPO'}
         </div>
 
         {/* Language Toggle */}
