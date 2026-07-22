@@ -1405,8 +1405,8 @@ export default function Reports() {
                       <p style={{ margin: 0, fontSize: '8px', color: '#cbd5e1', fontWeight: 600, marginTop: '2px' }}>{coachTitle}</p>
                     </div>
                   </div>
-                  <div style={{ marginTop: '10px', fontSize: '10.5px', color: '#00f2fe', fontWeight: 700, letterSpacing: '0.02em', lineHeight: 1.4, textShadow: '0 0 8px rgba(0, 242, 254, 0.4)', textAlign: 'center', width: '100%' }}>
-                    AtletikPlus Yapay Zeka Destekli Bilimsel Analiz Sporcu Gelişim Raporu
+                  <div style={{ marginTop: '10px', fontSize: '10.5px', color: '#ff6b35', fontWeight: 700, letterSpacing: '0.02em', lineHeight: 1.4, textShadow: '0 0 10px rgba(255, 107, 53, 0.4)', textAlign: 'center', width: '100%', fontFamily: 'Orbitron, sans-serif' }}>
+                    AtletikPlus Yapay Zeka Destekli Sporcu Gelişim Bilimsel Analiz Raporu
                   </div>
                 </div>
                 <div className="report-pnum">01</div>
