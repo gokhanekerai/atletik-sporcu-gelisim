@@ -9,6 +9,29 @@ import { localDb, supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const initials = name => name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
 
+const getDisplayChange = (m) => {
+  if (m.change && m.change !== '—' && m.change !== '-') {
+    return m.change;
+  }
+  const commentLower = (m.comment || '').toLowerCase();
+  if (commentLower.includes('hata') || commentLower.includes('referans') || commentLower.includes('suphe')) {
+    return '—';
+  }
+  if (!m.val2025 || !m.val2026) return '—';
+  const str25 = m.val2025.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+  const str26 = m.val2026.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+  if (m.val2025.toString().includes('*') || m.val2026.toString().includes('*')) {
+    return '—';
+  }
+  const v25 = parseFloat(str25);
+  const v26 = parseFloat(str26);
+  if (isNaN(v25) || isNaN(v26)) return '—';
+  const diff = v26 - v25;
+  const unit = m.metric === 'Kilo' ? 'kg' : 'cm';
+  const sign = diff > 0 ? '+' : '';
+  return `${sign}${parseFloat(diff.toFixed(1))} ${unit}`;
+};
+
 export default function PlayerDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -611,7 +634,7 @@ export default function PlayerDetail() {
                         <td style={{ fontWeight: 600 }}>{m.metric}</td>
                         <td style={{ color: 'var(--c-text-3)' }}>{m.val2025 || '—'}</td>
                         <td style={{ fontWeight: 700, color: 'var(--c-primary)' }}>{m.val2026 || '—'}</td>
-                        <td style={{ fontWeight: 700 }}>{m.change || '—'}</td>
+                        <td style={{ fontWeight: 700, color: String(getDisplayChange(m)).startsWith('+') ? 'var(--c-green)' : 'inherit' }}>{getDisplayChange(m)}</td>
                         <td style={{ fontSize: '0.75rem', color: 'var(--c-text-3)' }}>{m.comment || '—'}</td>
                       </tr>
                     ))}

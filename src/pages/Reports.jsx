@@ -88,6 +88,29 @@ export default function Reports() {
   const boyGrowth = getMetricGrowth('Boy');
   const kiloGrowth = getMetricGrowth('Kilo');
 
+  const getDisplayChange = (m) => {
+    if (m.change && m.change !== '—' && m.change !== '-') {
+      return m.change;
+    }
+    const commentLower = (m.comment || '').toLowerCase();
+    if (commentLower.includes('hata') || commentLower.includes('referans') || commentLower.includes('suphe')) {
+      return '—';
+    }
+    if (!m.val2025 || !m.val2026) return '—';
+    const str25 = m.val2025.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+    const str26 = m.val2026.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+    if (m.val2025.toString().includes('*') || m.val2026.toString().includes('*')) {
+      return '—';
+    }
+    const v25 = parseFloat(str25);
+    const v26 = parseFloat(str26);
+    if (isNaN(v25) || isNaN(v26)) return '—';
+    const diff = v26 - v25;
+    const unit = m.metric === 'Kilo' ? 'kg' : 'cm';
+    const sign = diff > 0 ? '+' : '';
+    return `${sign}${parseFloat(diff.toFixed(1))} ${unit}`;
+  };
+
   const generateScientificEvaluation = () => {
     if (!selectedPlayer) return '';
     const firstName = selectedPlayer.fullName?.split(' ')[0] || '';
@@ -1549,7 +1572,7 @@ export default function Reports() {
                           <td>{m.metric === 'Boy' ? '🦴 Boy' : m.metric === 'Kilo' ? '⚖️ Kilo' : m.metric === 'Kulaç' ? '🤲 Kulaç' : m.metric === 'Bel' ? '📐 Bel' : m.metric === 'Omuz' ? '💪 Omuz' : m.metric === 'Bacak' ? '🦵 Bacak' : m.metric}</td>
                           <td style={{ color: '#64748b' }}>{m.val2025} {m.metric === 'Kilo' ? 'kg' : 'cm'}</td>
                           <td style={{ color: '#27ae60', fontWeight: 700 }}>{m.val2026} {m.metric === 'Kilo' ? 'kg' : 'cm'}</td>
-                          <td style={{ color: String(m.change).startsWith('+') ? '#27ae60' : '#64748b', fontWeight: 700 }}>{m.change}</td>
+                          <td style={{ color: String(getDisplayChange(m)).startsWith('+') ? '#27ae60' : '#64748b', fontWeight: 700 }}>{getDisplayChange(m)}</td>
                           <td style={{ color: '#94a3b8', fontSize: '9px', whiteSpace: 'normal', maxWidth: '140px', lineHeight: '1.2' }}>{m.comment || '—'}</td>
                         </tr>
                       ))}
