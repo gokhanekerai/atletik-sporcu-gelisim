@@ -21,13 +21,30 @@ export default function Login() {
     const isDemoAdmin = email === 'admin@atletik.com' && password === 'admin123';
     const isDemoSuperAdmin = email === 'superadmin@atletik.com' && password === 'super123';
 
+    const normalizeEmailForMatch = (val) => {
+      if (!val) return '';
+      return val
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/ı/g, 'i')
+        .replace(/ş/g, 's')
+        .replace(/ğ/g, 'g')
+        .replace(/ç/g, 'c')
+        .replace(/ö/g, 'o')
+        .replace(/ü/g, 'u')
+        .replace(/\s+/g, '')
+        .trim();
+    };
+
     // Auto-detect student profile by email & password
     let matchedStudent = null;
     try {
       const db = localDb.get();
       const playersList = db.profiles || [];
       matchedStudent = playersList.find(p => 
-        p.email && p.email.toLowerCase() === email.toLowerCase() && 
+        p.email && normalizeEmailForMatch(p.email) === normalizeEmailForMatch(email) && 
         (p.password ? p.password.toString() === password.toString() : p.jerseyNumber?.toString() === password.toString())
       );
 
@@ -39,7 +56,7 @@ export default function Login() {
         
         if (!cloudErr && cloudProfiles) {
           matchedStudent = cloudProfiles.find(p => 
-            p.email && p.email.toLowerCase() === email.toLowerCase() && 
+            p.email && normalizeEmailForMatch(p.email) === normalizeEmailForMatch(email) && 
             (p.password ? p.password.toString() === password.toString() : p.jersey_number?.toString() === password.toString())
           );
         }

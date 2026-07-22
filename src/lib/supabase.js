@@ -54,6 +54,8 @@ export const normalizeName = (name) => {
   if (!name) return '';
   return name
     .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/ı/g, 'i')
     .replace(/ş/g, 's')
