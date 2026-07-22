@@ -1176,13 +1176,18 @@ tbody td {
   .header-bell {
     display: none !important;
   }
-  .header-logout span {
-    display: none !important; /* Hide 'Çıkış' text, keep only avatar */
+  .header-logout-btn {
+    display: flex !important; /* Keep logout button visible next to SP */
   }
   .header-actions {
     gap: var(--space-2) !important;
   }
   .top-header {
+    position: sticky !important;
+    top: 0 !important;
+    width: 100% !important;
+    z-index: 999 !important;
+    background: var(--c-surface) !important;
     justify-content: space-between !important;
   }
 }

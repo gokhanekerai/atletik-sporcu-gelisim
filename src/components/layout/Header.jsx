@@ -96,20 +96,36 @@ export default function Header({ onMenuClick }) {
 
         {/* Avatar / Sign Out */}
         <div 
-          className="header-logout"
-          onClick={() => {
-            localStorage.removeItem('user_role');
-            localStorage.removeItem('user_id');
-            window.dispatchEvent(new Event('auth-changed'));
-            window.location.href = '/';
-          }}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
-          title="Çıkış Yap"
+          className="header-logout-container"
+          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
         >
           <div className="header-avatar" style={{ background: 'var(--c-primary-dim)', color: 'var(--c-primary)' }}>
             {localStorage.getItem('user_role') === 'super_admin' ? 'SA' : (localStorage.getItem('user_role') === 'admin' ? 'AD' : 'SP')}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--c-text-2)', fontWeight: 600 }}>Çıkış</span>
+          <button 
+            className="header-logout-btn"
+            onClick={() => {
+              localStorage.removeItem('user_role');
+              localStorage.removeItem('user_id');
+              window.dispatchEvent(new Event('auth-changed'));
+              window.location.href = '/';
+            }}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 4, 
+              padding: '6px 12px', 
+              borderRadius: '6px', 
+              background: 'rgba(231,76,60,0.15)', 
+              color: '#e74c3c', 
+              border: '1px solid rgba(231,76,60,0.3)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Çıkış
+          </button>
         </div>
       </div>
     </header>
