@@ -157,7 +157,7 @@ export default function Reports() {
     <div>
       {/* SCOPED REPORT STYLES */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@400;500;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&subset=latin,latin-ext&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@400;500;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&subset=latin,latin-ext&display=swap');
 
         .report-grid {
           display: grid;
@@ -888,7 +888,7 @@ export default function Reports() {
             padding: 0 !important;
             background: #ffffff !important;
             color: #0f172a !important;
-            font-family: 'Inter', 'Montserrat', -apple-system, sans-serif !important;
+            font-family: 'Outfit', 'Montserrat', 'Inter', -apple-system, sans-serif !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
@@ -967,7 +967,7 @@ export default function Reports() {
           }
 
           .report-panel * {
-            font-family: 'Inter', 'Montserrat', -apple-system, sans-serif !important;
+            font-family: 'Outfit', 'Montserrat', 'Inter', -apple-system, sans-serif !important;
             color: #0f172a !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
