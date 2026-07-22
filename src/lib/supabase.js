@@ -65,6 +65,11 @@ export const normalizeName = (name) => {
     .trim();
 };
 
+export const generateEmailFromName = (name) => {
+  if (!name) return '';
+  return `${normalizeName(name)}@atletik.com`;
+};
+
 export async function syncFromSupabase() {
   if (!isSupabaseConfigured) return;
   console.log('Syncing database from Supabase cloud...');
@@ -85,20 +90,22 @@ export async function syncFromSupabase() {
         })
         .map(p => {
           const local = existingProfiles.find(lp => lp.id?.toString() === p.id?.toString()) || {};
+          const fullName = p.full_name || local.fullName;
+          const jersey = p.jersey_number ?? local.jerseyNumber ?? 10;
           return {
             id: p.id,
-            fullName: p.full_name || local.fullName,
+            fullName: fullName,
             role: p.role || local.role,
             birthDate: p.birth_date ?? local.birthDate,
             position: p.position ?? local.position,
             category: p.category ?? local.category,
             dominantHand: p.dominant_hand ?? local.dominantHand,
             bio: p.bio ?? local.bio,
-            jerseyNumber: p.jersey_number ?? local.jerseyNumber,
+            jerseyNumber: jersey,
             status: p.status || local.status || 'active',
             avatarUrl: p.avatar_url ?? local.avatarUrl,
-            email: p.email ?? local.email,
-            password: p.password ?? local.password,
+            email: p.email || local.email || generateEmailFromName(fullName),
+            password: p.password || local.password || jersey.toString(),
           };
         });
     }
@@ -223,8 +230,8 @@ export async function syncToSupabase(db) {
         jersey_number: p.jerseyNumber || 0,
         status: p.status || 'active',
         avatar_url: p.avatarUrl,
-        email: p.email,
-        password: p.password
+        email: p.email || generateEmailFromName(p.fullName),
+        password: p.password || (p.jerseyNumber || 10).toString()
       }));
       await supabase.from('profiles').upsert(mappedProfiles);
     }

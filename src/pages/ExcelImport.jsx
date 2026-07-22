@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, PlayCircle, Copy, Check, Sparkles, Download 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { isSupabaseConfigured, supabase, localDb, normalizeName } from '../lib/supabase';
+import { isSupabaseConfigured, supabase, localDb, normalizeName, generateEmailFromName } from '../lib/supabase';
 
 const CHATGPT_PROMPT_TEMPLATE = `Sen bir basketbol antrenörüne yardım eden uzman bir spor analisti asistanısın. Aşağıda bir antrenörün serbest metin olarak yazdığı sporcu gözlemleri, notlar ve bilgiler yer almaktadır. Bu bilgileri analiz ederek belirtilen JSON formatında çıktı üret.
 
@@ -365,7 +365,20 @@ async function saveToDatabase(parsedData) {
   if (isSupabaseConfigured) {
     const { data: player, error: playerError } = await supabase
       .from('profiles')
-      .insert({ id: newPlayerId, full_name: parsedData.fullName, role: 'student', birth_date: parsedData.kimlik.birthDate, position: parsedData.position || '1 (Oyun Kurucu)', category: parsedData.kimlik.category, dominant_hand: parsedData.dominantHand || 'right', bio: '', jersey_number: parsedData.jerseyNumber || 0, status: 'active' })
+      .insert({ 
+        id: newPlayerId, 
+        full_name: parsedData.fullName, 
+        role: 'student', 
+        birth_date: parsedData.kimlik.birthDate, 
+        position: parsedData.position || '1 (Oyun Kurucu)', 
+        category: parsedData.kimlik.category, 
+        dominant_hand: parsedData.dominantHand || 'right', 
+        bio: '', 
+        jersey_number: parsedData.jerseyNumber || 0, 
+        status: 'active',
+        email: generateEmailFromName(parsedData.fullName),
+        password: (parsedData.jerseyNumber || 10).toString()
+      })
       .select().single();
     if (playerError) throw playerError;
 
