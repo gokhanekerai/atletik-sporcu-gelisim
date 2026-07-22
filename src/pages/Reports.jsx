@@ -10,6 +10,7 @@ export default function Reports() {
   const [reportType, setReportType] = useState('individual');
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const reportRef = useRef(null);
+  const [coachName, setCoachName] = useState(() => localStorage.getItem('reports_coach_name') || 'Basketbol Antrenörü');
 
   const db = localDb.get();
   const players = db.profiles || [];
@@ -82,6 +83,8 @@ export default function Reports() {
     <div>
       {/* SCOPED REPORT STYLES */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@400;700;900&display=swap');
+
         .report-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -526,7 +529,7 @@ export default function Reports() {
         }
 
         .report-hero-panel {
-          background: linear-gradient(170deg, #0b1929 0%, #1a0b0b 55%, #230a0a 100%);
+          background: linear-gradient(180deg, rgba(6, 9, 19, 0.45) 0%, rgba(6, 9, 19, 0.95) 100%), url('/login_player_dunk.png') center/cover no-repeat !important;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -536,6 +539,7 @@ export default function Reports() {
           color: #fff;
           border-right: 1px solid rgba(255,255,255,.05);
           border-bottom: 1px solid rgba(255,255,255,.05);
+          font-family: 'Orbitron', 'Montserrat', sans-serif !important;
         }
 
         .report-hero-badge {
@@ -552,7 +556,7 @@ export default function Reports() {
         }
 
         .report-hero-badge-txt {
-          font-family: 'Montserrat', sans-serif;
+          font-family: 'Orbitron', sans-serif;
           font-size: 10px;
           font-weight: 900;
           color: #c0392b;
@@ -561,40 +565,48 @@ export default function Reports() {
         }
 
         .report-hero-club-sub {
+          font-family: 'Orbitron', sans-serif !important;
           font-size: 8.5px;
-          color: #64748b;
+          color: #ff6b35 !important;
           text-transform: uppercase;
           letter-spacing: .1em;
           margin-bottom: 12px;
+          font-weight: 700;
+          text-shadow: 0 0 8px rgba(255, 107, 53, 0.4) !important;
         }
 
         .report-hero-title-h1 {
-          font-family: 'Montserrat', sans-serif;
-          color: #fff;
+          font-family: 'Orbitron', sans-serif !important;
+          color: #fff !important;
           font-size: 15px;
-          font-weight: 900;
+          font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: .04em;
+          letter-spacing: .08em;
           text-align: center;
           margin-bottom: 2px;
+          text-shadow: 0 0 10px rgba(0, 242, 254, 0.65) !important;
         }
 
         .report-hero-title-h2 {
-          font-family: 'Montserrat', sans-serif;
-          color: #e74c3c;
+          font-family: 'Orbitron', sans-serif !important;
+          color: #ff6b35 !important;
           font-size: 30px;
           font-weight: 900;
           text-transform: uppercase;
           text-align: center;
           line-height: 1;
+          text-shadow: 0 0 20px rgba(255, 107, 53, 0.9) !important;
         }
 
         .report-hero-season {
+          font-family: 'Orbitron', sans-serif !important;
           font-size: 9px;
-          color: #64748b;
+          color: #a78bfa !important;
+          font-weight: 700 !important;
           letter-spacing: .1em;
           margin-top: 4px;
           margin-bottom: 12px;
+          text-shadow: 0 0 8px rgba(167, 139, 250, 0.5) !important;
         }
 
         .report-hero-img-area {
@@ -650,21 +662,24 @@ export default function Reports() {
         }
 
         .report-hero-name h3 {
-          font-family: 'Montserrat', sans-serif;
-          color: #fff;
+          font-family: 'Orbitron', sans-serif !important;
+          color: #fff !important;
           font-size: 19px;
           font-weight: 900;
           text-transform: uppercase;
           line-height: 1.1;
+          text-shadow: 0 0 12px rgba(255, 255, 255, 0.6) !important;
         }
-
+ 
         .report-hero-name p {
-          color: #e74c3c;
+          font-family: 'Orbitron', sans-serif !important;
+          color: #ff6b35 !important;
           font-size: 9.5px;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: .1em;
           margin-top: 3px;
+          text-shadow: 0 0 8px rgba(255, 107, 53, 0.4) !important;
         }
 
         .report-hero-footer-area {
@@ -839,9 +854,7 @@ export default function Reports() {
             border-radius: 0 !important;
           }
 
-          /* ── Her panel: sayfa yüksekliğine göre %100 uzanır ── */
-          .report-panel,
-          .report-hero-panel {
+          .report-panel {
             width: 100% !important;
             height: 100% !important;
             min-height: 100% !important;
@@ -860,10 +873,35 @@ export default function Reports() {
             print-color-adjust: exact !important;
           }
 
-          .report-panel *,
-          .report-hero-panel * {
+          .report-hero-panel {
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 100% !important;
+            max-height: 100% !important;
+            box-sizing: border-box !important;
+            padding: 14px 14px 32px !important;
+            border: 1.5px solid #1e293b !important;
+            border-radius: 6px !important;
+            background: linear-gradient(180deg, rgba(6, 9, 19, 0.45) 0%, rgba(6, 9, 19, 0.95) 100%), url('/login_player_dunk.png') center/cover no-repeat !important;
+            color: #ffffff !important;
+            position: relative !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          .report-panel * {
             font-family: 'Inter', 'Montserrat', -apple-system, sans-serif !important;
             color: #0f172a !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          .report-hero-panel * {
+            font-family: 'Orbitron', 'Montserrat', sans-serif !important;
+            color: #ffffff !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
@@ -1019,32 +1057,45 @@ export default function Reports() {
 
           /* ── Hero (Kapak) panel elemanları ── */
           .report-hero-panel {
-            background: #ffffff !important;
+            background: linear-gradient(180deg, rgba(6, 9, 19, 0.45) 0%, rgba(6, 9, 19, 0.95) 100%), url('/login_player_dunk.png') center/cover no-repeat !important;
+            color: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           .report-hero-title-h1 {
-            color: #0f172a !important;
-            font-size: 10pt !important;
-            font-weight: 800;
+            color: #ffffff !important;
+            font-size: 11pt !important;
+            font-weight: 800 !important;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.65) !important;
+            font-family: 'Orbitron', sans-serif !important;
           }
           .report-hero-title-h2 {
-            color: #c0392b !important;
-            font-size: 20pt !important;
+            color: #ff6b35 !important;
+            font-size: 22pt !important;
             font-weight: 900 !important;
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.9) !important;
+            font-family: 'Orbitron', sans-serif !important;
           }
           .report-hero-season {
-            color: #e67e22 !important;
-            font-size: 7.5pt !important;
+            color: #a78bfa !important;
+            font-size: 8.5pt !important;
             font-weight: 700 !important;
+            text-shadow: 0 0 8px rgba(167, 139, 250, 0.5) !important;
+            font-family: 'Orbitron', sans-serif !important;
           }
           .report-hero-name h3 {
-            color: #0f172a !important;
+            color: #ffffff !important;
             font-weight: 900 !important;
-            font-size: 13pt !important;
+            font-size: 14pt !important;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.6) !important;
+            font-family: 'Orbitron', sans-serif !important;
           }
           .report-hero-name p {
-            color: #e74c3c !important;
+            color: #ff6b35 !important;
             font-weight: 700 !important;
-            font-size: 7.5pt !important;
+            font-size: 8pt !important;
+            text-shadow: 0 0 8px rgba(255, 107, 53, 0.4) !important;
+            font-family: 'Orbitron', sans-serif !important;
           }
           .report-hero-img-area {
             width: 120px !important;
@@ -1054,8 +1105,11 @@ export default function Reports() {
           }
           .report-hero-img-emoji { font-size: 58px !important; }
           .report-hero-club-sub {
-            color: #64748b !important;
+            color: #ff6b35 !important;
             font-size: 7.5pt !important;
+            font-weight: 700 !important;
+            text-shadow: 0 0 8px rgba(255, 107, 53, 0.4) !important;
+            font-family: 'Orbitron', sans-serif !important;
           }
 
           /* ── Antrenör raporu (Coach Report) ── */
@@ -1260,11 +1314,27 @@ export default function Reports() {
       {/* Individual View */}
       {reportType === 'individual' && (
         <div>
-          {/* Player select */}
-          <div className="filters-bar no-print" style={{ marginBottom: 'var(--space-5)' }}>
-            <select style={{ maxWidth: 280 }} value={effectivePlayerId} onChange={e => setSelectedPlayerId(e.target.value)}>
-              {players.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
-            </select>
+          {/* Player select & Coach name */}
+          <div className="filters-bar no-print" style={{ marginBottom: 'var(--space-5)', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--c-text-2)' }}>Sporcu Seçin:</label>
+              <select style={{ minWidth: 260, margin: 0 }} value={effectivePlayerId} onChange={e => setSelectedPlayerId(e.target.value)}>
+                {players.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
+              </select>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--c-text-2)' }}>Antrenör Adı Soyadı:</label>
+              <input 
+                type="text" 
+                style={{ width: 260, margin: 0 }}
+                placeholder="Basketbol Antrenörü"
+                value={coachName}
+                onChange={e => {
+                  setCoachName(e.target.value);
+                  localStorage.setItem('reports_coach_name', e.target.value);
+                }}
+              />
+            </div>
           </div>
 
           {players.length === 0 && (
@@ -1301,14 +1371,29 @@ export default function Reports() {
                 </div>
 
                 <div className="report-hero-footer-area">
-                  <div className="report-hero-prep">
-                    <div className="report-hero-prep-icon">🏋</div>
-                    <div className="report-hero-prep-t">
-                      <p>HAZIRLAYAN</p>
-                      <p>Basketbol Antrenörü</p>
+                  <div className="report-hero-prep" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <img 
+                      src="/atleticplus_logo.jpeg" 
+                      alt="AtletikPlus" 
+                      style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        objectFit: 'cover', 
+                        border: '1.5px solid rgba(255,107,53,0.4)',
+                        boxShadow: '0 0 10px rgba(255,107,53,0.3)',
+                        flexShrink: 0
+                      }} 
+                    />
+                    <div className="report-hero-prep-t" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <p style={{ margin: 0, fontSize: '8px', color: '#64748b', fontWeight: 600, letterSpacing: '0.05em' }}>HAZIRLAYAN</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: '#ffffff', fontWeight: 800 }}>{coachName}</p>
                     </div>
                   </div>
-                  <div className="report-hero-ai">🤖 Bilimsel Analiz & Dijital Raporlama Desteği: ChatGPT (OpenAI)</div>
+                  <div style={{ marginTop: '6px', fontSize: '8.5px', color: '#a78bfa', fontWeight: 600, letterSpacing: '0.03em', lineHeight: 1.2 }}>
+                    AtletikPlus yapay zeka destekli bilimsel analiz sporcu gelişim raporu
+                  </div>
+                  <div className="report-hero-ai" style={{ marginTop: '4px' }}>🤖 Dijital Raporlama Desteği: ChatGPT (OpenAI)</div>
                 </div>
                 <div className="report-pnum">01</div>
               </div>
@@ -1509,7 +1594,7 @@ export default function Reports() {
                   <p style={{ fontSize: 10, color: '#64748b' }}>Antrenör raporu yüklenmemiş</p>
                 )}
 
-                <div className="report-c-sign">Basketbol Antrenörü</div>
+                <div className="report-c-sign">{coachName}</div>
                 <div className="report-c-sign-sub">Başantrenör – Kocaeli Atletik Spor Kulübü</div>
                 <div className="report-pnum">06</div>
               </div>
