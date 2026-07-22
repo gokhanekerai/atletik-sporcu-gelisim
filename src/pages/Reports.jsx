@@ -11,6 +11,7 @@ export default function Reports() {
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const reportRef = useRef(null);
   const [coachName, setCoachName] = useState(() => localStorage.getItem('reports_coach_name') || 'Basketbol Antrenörü');
+  const [coachTitle, setCoachTitle] = useState(() => localStorage.getItem('reports_coach_title') || 'Başantrenör – Kocaeli Atletik Spor Kulübü');
 
   const db = localDb.get();
   const players = db.profiles || [];
@@ -1314,7 +1315,7 @@ export default function Reports() {
       {/* Individual View */}
       {reportType === 'individual' && (
         <div>
-          {/* Player select & Coach name */}
+          {/* Player select & Coach name & Coach Title */}
           <div className="filters-bar no-print" style={{ marginBottom: 'var(--space-5)', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--c-text-2)' }}>Sporcu Seçin:</label>
@@ -1326,12 +1327,25 @@ export default function Reports() {
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--c-text-2)' }}>Antrenör Adı Soyadı:</label>
               <input 
                 type="text" 
-                style={{ width: 260, margin: 0 }}
+                style={{ width: 220, margin: 0 }}
                 placeholder="Basketbol Antrenörü"
                 value={coachName}
                 onChange={e => {
                   setCoachName(e.target.value);
                   localStorage.setItem('reports_coach_name', e.target.value);
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--c-text-2)' }}>Antrenör Görevi:</label>
+              <input 
+                type="text" 
+                style={{ width: 280, margin: 0 }}
+                placeholder="Başantrenör – Kocaeli Atletik Spor Kulübü"
+                value={coachTitle}
+                onChange={e => {
+                  setCoachTitle(e.target.value);
+                  localStorage.setItem('reports_coach_title', e.target.value);
                 }}
               />
             </div>
@@ -1388,13 +1402,11 @@ export default function Reports() {
                     <div className="report-hero-prep-t" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                       <p style={{ margin: 0, fontSize: '8.5px', color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em' }}>HAZIRLAYAN</p>
                       <p style={{ margin: 0, fontSize: '12px', color: '#ffffff', fontWeight: 800, fontFamily: 'Orbitron, sans-serif' }}>{coachName}</p>
+                      <p style={{ margin: 0, fontSize: '8px', color: '#cbd5e1', fontWeight: 600, marginTop: '2px' }}>{coachTitle}</p>
                     </div>
                   </div>
-                  <div style={{ marginTop: '8px', fontSize: '10.5px', color: '#00f2fe', fontWeight: 700, letterSpacing: '0.02em', lineHeight: 1.4, textShadow: '0 0 8px rgba(0, 242, 254, 0.4)', textAlign: 'center', width: '100%' }}>
+                  <div style={{ marginTop: '10px', fontSize: '10.5px', color: '#00f2fe', fontWeight: 700, letterSpacing: '0.02em', lineHeight: 1.4, textShadow: '0 0 8px rgba(0, 242, 254, 0.4)', textAlign: 'center', width: '100%' }}>
                     AtletikPlus Yapay Zeka Destekli Bilimsel Analiz Sporcu Gelişim Raporu
-                  </div>
-                  <div style={{ marginTop: '6px', fontSize: '9px', color: '#cbd5e1', opacity: 0.9, textAlign: 'center', width: '100%', fontWeight: 500 }}>
-                    🤖 Dijital Raporlama Desteği: ChatGPT (OpenAI)
                   </div>
                 </div>
                 <div className="report-pnum">01</div>
@@ -1597,7 +1609,7 @@ export default function Reports() {
                 )}
 
                 <div className="report-c-sign">{coachName}</div>
-                <div className="report-c-sign-sub">Başantrenör – Kocaeli Atletik Spor Kulübü</div>
+                <div className="report-c-sign-sub">{coachTitle}</div>
                 <div className="report-pnum">06</div>
               </div>
             </div>
