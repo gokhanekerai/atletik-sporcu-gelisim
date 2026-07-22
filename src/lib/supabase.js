@@ -50,256 +50,156 @@ if (!localStorage.getItem(LOCAL_STORAGE_KEY)) {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defaultDb));
 }
 
-// Merge seed players into existing DB (add if not already present)
-try {
-  const existing = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
-  let changed = false;
-  const tables = ['profiles','genetics','antropometri','skills','coach_reports','goals','physicalMeasurements'];
-  tables.forEach(table => {
-    if (!existing[table]) { existing[table] = []; }
-    (seedData[table] || []).forEach(seedItem => {
-      const idField = table === 'profiles' ? 'id' : 'playerId';
-      const alreadyExists = existing[table].some(r => r[idField] === seedItem[idField] && (table === 'profiles' || r.metric === seedItem.metric || r.name === seedItem.name || table === 'genetics' || table === 'coach_reports' || table === 'goals' || table === 'physicalMeasurements'));
-      if (table === 'profiles') {
-        if (!existing[table].some(r => r.id === seedItem.id)) { existing[table].push(seedItem); changed = true; }
-      } else if (!alreadyExists) {
-        existing[table].push(seedItem); changed = true;
-      }
-    });
-  });
-  if (changed) localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(existing));
-} catch(e) { console.warn('Seed merge failed:', e); }
-
-// Clean up duplicate profiles for Çınar Caner and force map to 'cinar_caner_001' to sync all measurements
-try {
-  const existing = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
-  if (existing.profiles && existing.profiles.length > 0) {
-    const matchesCinar = (name) => {
-      if (!name) return false;
-      const normalized = name.toLowerCase().replace(/\s+/g, '').replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ç/g, 'c').replace(/ö/g, 'o').replace(/ü/g, 'u');
-      return normalized === 'cinarcaner';
-    };
-    
-    const cinarProfiles = existing.profiles.filter(p => matchesCinar(p.fullName));
-    if (cinarProfiles.length > 0) {
-      const targetId = 'cinar_caner_001';
-      
-      // Force change id of all matching profiles to targetId
-      existing.profiles = existing.profiles.map(p => {
-        if (matchesCinar(p.fullName)) {
-          return { ...p, id: targetId };
-        }
-        return p;
-      });
-      
-      // Deduplicate profiles
-      const seenIds = new Set();
-      existing.profiles = existing.profiles.filter(p => {
-        if (p.id === targetId) {
-          if (seenIds.has(targetId)) return false;
-          seenIds.add(targetId);
-          return true;
-        }
-        return true;
-      });
-
-      // Update foreign keys in child tables for any old IDs to targetId
-      const oldIds = cinarProfiles.map(p => p.id).filter(id => id !== targetId);
-      if (oldIds.length > 0) {
-        const childTables = ['genetics', 'antropometri', 'skills', 'coach_reports', 'goals', 'physicalMeasurements'];
-        childTables.forEach(table => {
-          if (existing[table]) {
-            existing[table] = existing[table].map(r => {
-              const idField = table === 'profiles' ? 'id' : 'playerId';
-              if (oldIds.includes(r[idField])) {
-                return { ...r, [idField]: targetId };
-              }
-              return r;
-            });
-          }
-        });
-      }
-      
-      // Force refresh/overwrite data for Cinar Caner (cinar_caner_001) with latest seed values
-      existing.profiles = existing.profiles.filter(p => p.id !== targetId);
-      existing.genetics = (existing.genetics || []).filter(g => g.playerId !== targetId);
-      existing.antropometri = (existing.antropometri || []).filter(m => m.playerId !== targetId);
-      existing.skills = (existing.skills || []).filter(s => s.playerId !== targetId);
-      existing.coach_reports = (existing.coach_reports || []).filter(r => r.playerId !== targetId);
-      existing.goals = (existing.goals || []).filter(g => g.playerId !== targetId);
-      existing.physicalMeasurements = (existing.physicalMeasurements || []).filter(m => m.playerId !== targetId);
-      
-      // Re-insert fresh seed values
-      if (seedData.profiles) { existing.profiles.push(...seedData.profiles.filter(p => p.id === targetId)); }
-      if (seedData.genetics) { existing.genetics.push(...seedData.genetics.filter(g => g.playerId === targetId)); }
-      if (seedData.antropometri) { existing.antropometri.push(...seedData.antropometri.filter(m => m.playerId === targetId)); }
-      if (seedData.skills) { existing.skills.push(...seedData.skills.filter(s => s.playerId === targetId)); }
-      if (seedData.coach_reports) { existing.coach_reports.push(...seedData.coach_reports.filter(r => r.playerId === targetId)); }
-      if (seedData.goals) { existing.goals.push(...seedData.goals.filter(g => g.playerId === targetId)); }
-      if (seedData.physicalMeasurements) { existing.physicalMeasurements.push(...seedData.physicalMeasurements.filter(m => m.playerId === targetId)); }
-      
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(existing));
-      console.log('Cinar Caner seed data synchronized successfully.');
-    }
-  }
-} catch(e) { console.warn('Deduplication/seed sync failed:', e); }
+export const normalizeName = (name) => {
+  if (!name) return '';
+  return name
+    .toString()
+    .toLowerCase()
+    .replace(/ı/g, 'i')
+    .replace(/ş/g, 's')
+    .replace(/ğ/g, 'g')
+    .replace(/ç/g, 'c')
+    .replace(/ö/g, 'o')
+    .replace(/ü/g, 'u')
+    .replace(/\s+/g, '')
+    .trim();
+};
 
 export async function syncFromSupabase() {
   if (!isSupabaseConfigured) return;
   console.log('Syncing database from Supabase cloud...');
   try {
     const db = localDb.get();
+    const deletedIds = localDb.getDeletedIds();
+    const deletedNames = localDb.getDeletedNames();
     
     // 1. Fetch profiles
     const { data: profiles, error: pError } = await supabase.from('profiles').select('*');
     if (!pError && profiles) {
-      if (profiles.length === 0) {
-        if (!db.profiles || db.profiles.length === 0) {
-          console.log('Both local and cloud database are empty. Re-loading default seed data...');
-          db.profiles = [...(seedData.profiles || [])];
-          db.genetics = [...(seedData.genetics || [])];
-          db.antropometri = [...(seedData.antropometri || [])];
-          db.skills = [...(seedData.skills || [])];
-          db.coach_reports = [...(seedData.coach_reports || [])];
-          db.goals = [...(seedData.goals || [])];
-          db.physicalMeasurements = [...(seedData.physicalMeasurements || [])];
-          db.teams = [
-            { id: 1, name: 'Kocaeli Atletik U9/U10', category: 'U9/U10', season: '2025-26', color: '#FF6B35' },
-            { id: 2, name: 'Kocaeli Atletik U12', category: 'U12', season: '2025-26', color: '#4ECDC4' },
-            { id: 3, name: 'Kocaeli Atletik U14', category: 'U14', season: '2025-26', color: '#A78BFA' }
-          ];
-        }
-        console.log('Supabase database is empty. Seeding Supabase with local/seed data...');
-        await syncToSupabase(db);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(db));
-        window.dispatchEvent(new Event('auth-changed'));
-        return;
-      }
-      // Smart merge: preserve local non-null values when cloud returns null
       const existingProfiles = db.profiles || [];
-      db.profiles = profiles.map(p => {
-        const local = existingProfiles.find(lp => lp.id === p.id) || {};
-        return {
-          id: p.id,
-          fullName: p.full_name || local.fullName,
-          role: p.role || local.role,
-          birthDate: p.birth_date ?? local.birthDate,
-          position: p.position ?? local.position,
-          category: p.category ?? local.category,
-          dominantHand: p.dominant_hand ?? local.dominantHand,
-          bio: p.bio ?? local.bio,
-          jerseyNumber: p.jersey_number ?? local.jerseyNumber,
-          status: p.status || local.status || 'active',
-          avatarUrl: p.avatar_url ?? local.avatarUrl,
-          email: p.email ?? local.email,
-          password: p.password ?? local.password,
-        };
-      });
+      db.profiles = profiles
+        .filter(p => {
+          const pId = p.id?.toString();
+          const pName = normalizeName(p.full_name || p.fullName || '');
+          const isIdDeleted = deletedIds.includes(pId);
+          const isNameDeleted = pName && deletedNames.includes(pName);
+          return !isIdDeleted && !isNameDeleted && p.status !== 'deleted';
+        })
+        .map(p => {
+          const local = existingProfiles.find(lp => lp.id?.toString() === p.id?.toString()) || {};
+          return {
+            id: p.id,
+            fullName: p.full_name || local.fullName,
+            role: p.role || local.role,
+            birthDate: p.birth_date ?? local.birthDate,
+            position: p.position ?? local.position,
+            category: p.category ?? local.category,
+            dominantHand: p.dominant_hand ?? local.dominantHand,
+            bio: p.bio ?? local.bio,
+            jerseyNumber: p.jersey_number ?? local.jerseyNumber,
+            status: p.status || local.status || 'active',
+            avatarUrl: p.avatar_url ?? local.avatarUrl,
+            email: p.email ?? local.email,
+            password: p.password ?? local.password,
+          };
+        });
     }
 
     // 2. Fetch genetics
     const { data: genetics, error: gError } = await supabase.from('genetics').select('*');
     if (!gError && genetics) {
-      db.genetics = genetics.map(g => ({
-        _id: g.id,
-        playerId: g.player_id,
-        fatherHeight: g.father_height,
-        motherHeight: g.mother_height,
-        targetHeight: g.target_height,
-        note: g.genetics_note,
-        allergy: g.allergy
-      }));
+      db.genetics = genetics
+        .filter(g => !deletedIds.includes(g.player_id?.toString()))
+        .map(g => ({
+          _id: g.id,
+          playerId: g.player_id,
+          fatherHeight: g.father_height,
+          motherHeight: g.mother_height,
+          targetHeight: g.target_height,
+          note: g.genetics_note,
+          allergy: g.allergy
+        }));
     }
 
     // 3. Fetch antropometri
     const { data: antropometri, error: aError } = await supabase.from('antropometri').select('*');
     if (!aError && antropometri) {
-      db.antropometri = antropometri.map(a => ({
-        _id: a.id,
-        playerId: a.player_id,
-        date: a.date,
-        metric: a.metric,
-        val2025: a.val_2025,
-        val2026: a.val_2026,
-        change: a.change_val,
-        comment: a.comment
-      }));
+      db.antropometri = antropometri
+        .filter(a => !deletedIds.includes(a.player_id?.toString()))
+        .map(a => ({
+          _id: a.id,
+          playerId: a.player_id,
+          date: a.date,
+          metric: a.metric,
+          val2025: a.val_2025,
+          val2026: a.val_2026,
+          change: a.change_val,
+          comment: a.comment
+        }));
     }
 
     // 4. Fetch skills
     const { data: skills, error: sError } = await supabase.from('skills').select('*');
     if (!sError && skills) {
-      db.skills = skills.map(s => ({
-        _id: s.id,
-        playerId: s.player_id,
-        name: s.name,
-        type: s.type,
-        status: s.rating,
-        analysis: s.analysis
-      }));
+      db.skills = skills
+        .filter(s => !deletedIds.includes(s.player_id?.toString()))
+        .map(s => ({
+          _id: s.id,
+          playerId: s.player_id,
+          name: s.name,
+          type: s.type,
+          status: s.rating,
+          analysis: s.analysis
+        }));
     }
 
     // 5. Fetch coach reports
     const { data: coachReports, error: cError } = await supabase.from('coach_reports').select('*');
     if (!cError && coachReports) {
-      db.coach_reports = coachReports.map(r => ({
-        _id: r.id,
-        playerId: r.player_id,
-        report: r.report_data
-      }));
+      db.coach_reports = coachReports
+        .filter(r => !deletedIds.includes(r.player_id?.toString()))
+        .map(r => ({
+          _id: r.id,
+          playerId: r.player_id,
+          report: r.report_data
+        }));
     }
 
     // 6. Fetch goals
     const { data: goals, error: goError } = await supabase.from('goals').select('*');
     if (!goError && goals) {
-      db.goals = goals.map(g => ({
-        _id: g.id,
-        playerId: g.player_id,
-        category: g.category,
-        title: g.title,
-        status: g.status
-      }));
+      db.goals = goals
+        .filter(g => !deletedIds.includes(g.player_id?.toString()))
+        .map(g => ({
+          _id: g.id,
+          playerId: g.player_id,
+          category: g.category,
+          title: g.title,
+          status: g.status
+        }));
     }
 
     // 7. Fetch physical measurements (tracking)
     const { data: physicalMeasurements, error: pmError } = await supabase.from('physical_measurements').select('*');
     if (!pmError && physicalMeasurements) {
-      db.physicalMeasurements = physicalMeasurements.map(pm => ({
-        _id: pm.id,
-        playerId: pm.player_id,
-        date: pm.date,
-        heightCm: pm.height_cm,
-        weightKg: pm.weight_kg,
-        kulac: pm.kulac,
-        bel: pm.bel,
-        omuz: pm.omuz,
-        bacak: pm.bacak,
-        note: pm.note
-      }));
+      db.physicalMeasurements = physicalMeasurements
+        .filter(pm => !deletedIds.includes(pm.player_id?.toString()))
+        .map(pm => ({
+          _id: pm.id,
+          playerId: pm.player_id,
+          date: pm.date,
+          heightCm: pm.height_cm,
+          weightKg: pm.weight_kg,
+          kulac: pm.kulac,
+          bel: pm.bel,
+          omuz: pm.omuz,
+          bacak: pm.bacak,
+          note: pm.note
+        }));
     }
 
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(db));
     window.dispatchEvent(new Event('auth-changed'));
-    // Only push profiles back to cloud (to update missing fields like category)
-    // Do NOT push child tables here - that would cause duplication
-    if (db.profiles && db.profiles.length > 0) {
-      const mappedProfiles = db.profiles.map(p => ({
-        id: p.id,
-        full_name: p.fullName || 'Bilinmeyen',
-        role: p.role || 'student',
-        birth_date: p.birthDate,
-        position: p.position,
-        category: p.category,
-        dominant_hand: p.dominantHand,
-        bio: p.bio,
-        jersey_number: p.jerseyNumber || 0,
-        status: p.status || 'active',
-        avatar_url: p.avatarUrl,
-        email: p.email,
-        password: p.password
-      }));
-      await supabase.from('profiles').upsert(mappedProfiles);
-    }
     console.log('Database synced from Supabase successfully.');
   } catch (err) {
     console.error('Failed to sync database from Supabase:', err);
@@ -342,7 +242,7 @@ export async function syncToSupabase(db) {
         genetics_note: g.note,
         allergy: g.allergy
       }));
-      await supabase.from('genetics').upsert(mappedGenetics);
+      await supabase.from('genetics').upsert(mappedGenetics, { onConflict: 'player_id' });
     }
 
     // 3. Sync antropometri
@@ -380,7 +280,7 @@ export async function syncToSupabase(db) {
         player_id: r.playerId,
         report_data: r.report
       }));
-      await supabase.from('coach_reports').upsert(mappedReports);
+      await supabase.from('coach_reports').upsert(mappedReports, { onConflict: 'player_id' });
     }
 
     // 6. Sync goals
@@ -420,12 +320,48 @@ export async function syncToSupabase(db) {
 
 export const localDb = {
   get: () => JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}'),
+  getDeletedIds: () => JSON.parse(localStorage.getItem('baskettrack_deleted_ids') || '[]'),
+  getDeletedNames: () => JSON.parse(localStorage.getItem('baskettrack_deleted_names') || '[]'),
+  markDeleted: (id, fullName) => {
+    if (id) {
+      const strId = id.toString();
+      const ids = JSON.parse(localStorage.getItem('baskettrack_deleted_ids') || '[]');
+      if (!ids.includes(strId)) {
+        ids.push(strId);
+        localStorage.setItem('baskettrack_deleted_ids', JSON.stringify(ids));
+      }
+    }
+    if (fullName) {
+      const normName = normalizeName(fullName);
+      if (normName) {
+        const names = JSON.parse(localStorage.getItem('baskettrack_deleted_names') || '[]');
+        if (!names.includes(normName)) {
+          names.push(normName);
+          localStorage.setItem('baskettrack_deleted_names', JSON.stringify(names));
+        }
+      }
+    }
+  },
+  unmarkDeleted: (fullName) => {
+    if (fullName) {
+      const normName = normalizeName(fullName);
+      if (normName) {
+        let names = JSON.parse(localStorage.getItem('baskettrack_deleted_names') || '[]');
+        names = names.filter(n => n !== normName);
+        localStorage.setItem('baskettrack_deleted_names', JSON.stringify(names));
+      }
+    }
+  },
   set: (data) => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
     if (isSupabaseConfigured) {
       syncToSupabase(data);
     }
   },
-  clear: () => localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defaultDb)),
+  clear: () => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defaultDb));
+    localStorage.removeItem('baskettrack_deleted_ids');
+    localStorage.removeItem('baskettrack_deleted_names');
+  },
 };
 

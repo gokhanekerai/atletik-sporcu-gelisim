@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, Filter, Plus, ChevronRight, X, Trash2, Save, Sparkles } from 'lucide-react';
-import { localDb, supabase, isSupabaseConfigured } from '../lib/supabase';
+import { localDb, supabase, isSupabaseConfigured, normalizeName } from '../lib/supabase';
 
 const initials = name => name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
 
@@ -10,10 +10,21 @@ export default function Players() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   
+  const [db, setDb] = useState(() => localDb.get());
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');
   const [posFilter, setPosFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  useEffect(() => {
+    const refresh = () => setDb(localDb.get());
+    window.addEventListener('auth-changed', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('auth-changed', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,7 +42,6 @@ export default function Players() {
     status: 'active'
   });
 
-  const db = localDb.get();
   const players = db.profiles || [];
 
   // Filter players list
@@ -40,7 +50,7 @@ export default function Players() {
     const matchCat = catFilter === 'all' || p.category === catFilter;
     const matchPos = posFilter === 'all' || p.position === posFilter;
     const matchStatus = statusFilter === 'all' || p.status === statusFilter;
-    return matchName && matchCat && matchPos && matchStatus && p.role !== 'admin';
+    return matchName && matchCat && matchPos && matchStatus && p.role !== 'admin' && p.role !== 'super_admin';
   });
 
   const getAge = (birthDate) => {
@@ -59,6 +69,22 @@ export default function Players() {
     }
 
     const currentDb = localDb.get();
+    const existingPlayers = currentDb.profiles || [];
+
+    // Duplicate name check
+    const normalizedInputName = normalizeName(newPlayer.fullName);
+    const existingMatch = existingPlayers.find(p => normalizeName(p.fullName) === normalizedInputName);
+
+    if (existingMatch) {
+      const confirmAdd = window.confirm(
+        `⚠️ UYARI: "${newPlayer.fullName}" isminde bir sporcu sistemde zaten kayıtlı!\n\nYine de aynı isim ve soyisimle yeni bir sporcu eklemek istediğinizden emin misiniz?`
+      );
+      if (!confirmAdd) {
+        return; // Kullanıcı onaylamadı -> Sporcu eklenmesin!
+      }
+      localDb.unmarkDeleted(newPlayer.fullName);
+    }
+
     const newId = `player_${Date.now()}`;
 
     // Add profile
@@ -145,6 +171,8 @@ export default function Players() {
 
     // Save database
     localDb.set(currentDb);
+    setDb(currentDb);
+    window.dispatchEvent(new Event('auth-changed'));
 
     // Reset state & close modal
     setNewPlayer({
@@ -163,46 +191,57 @@ export default function Players() {
 
   // Delete player profiles
   const handleDeletePlayer = async (playerId) => {
+    if (!playerId) return;
     setDeletingId(playerId);
+
+    const currentDb = localDb.get();
+    const targetPlayer = (currentDb.profiles || []).find(p => p.id?.toString() === playerId.toString());
+    const strId = playerId.toString();
+    const fullName = targetPlayer?.fullName || '';
+    const normName = normalizeName(fullName);
+
+    // Mark player ID and Name as permanently deleted in local registry
+    localDb.markDeleted(strId, fullName);
 
     if (isSupabaseConfigured) {
       try {
         // Delete child records first to prevent FK constraint violations
-        await supabase.from('antropometri').delete().eq('player_id', playerId);
-        await supabase.from('skills').delete().eq('player_id', playerId);
-        await supabase.from('coach_reports').delete().eq('player_id', playerId);
-        await supabase.from('goals').delete().eq('player_id', playerId);
-        await supabase.from('genetics').delete().eq('player_id', playerId);
-        await supabase.from('physical_measurements').delete().eq('player_id', playerId);
+        await supabase.from('antropometri').delete().eq('player_id', strId);
+        await supabase.from('skills').delete().eq('player_id', strId);
+        await supabase.from('coach_reports').delete().eq('player_id', strId);
+        await supabase.from('goals').delete().eq('player_id', strId);
+        await supabase.from('genetics').delete().eq('player_id', strId);
+        await supabase.from('physical_measurements').delete().eq('player_id', strId);
 
-        // Delete profile
-        const { error } = await supabase.from('profiles').delete().eq('id', playerId);
-        if (error) {
-          console.error('Supabase delete error:', error);
-          alert('Buluttan silinirken hata oluştu: ' + error.message);
-          return;
+        // Delete profile and mark status as deleted in cloud
+        await supabase.from('profiles').delete().eq('id', strId);
+        if (fullName) {
+          await supabase.from('profiles').delete().eq('full_name', fullName);
         }
+        await supabase.from('profiles').update({ status: 'deleted' }).eq('id', strId);
       } catch(err) {
-        console.error('Supabase delete exception:', err);
-        alert('Buluttan silinirken bir sorun oluştu.');
-        setDeletingId(null);
-        return;
+        console.warn('Supabase cloud delete exception (local deletion will persist):', err);
       }
     }
 
-    const currentDb = localDb.get();
-    
-    // Clean all entries related to playerId
-    currentDb.profiles = (currentDb.profiles || []).filter(p => p.id?.toString() !== playerId.toString());
-    currentDb.genetics = (currentDb.genetics || []).filter(g => g.playerId?.toString() !== playerId.toString());
-    currentDb.antropometri = (currentDb.antropometri || []).filter(m => m.playerId?.toString() !== playerId.toString());
-    currentDb.skills = (currentDb.skills || []).filter(s => s.playerId?.toString() !== playerId.toString());
-    currentDb.coach_reports = (currentDb.coach_reports || []).filter(r => r.playerId?.toString() !== playerId.toString());
-    currentDb.goals = (currentDb.goals || []).filter(g => g.playerId?.toString() !== playerId.toString());
-    currentDb.physicalMeasurements = (currentDb.physicalMeasurements || []).filter(m => m.playerId?.toString() !== playerId.toString());
+    // Clean all entries related to playerId or fullName
+    currentDb.profiles = (currentDb.profiles || []).filter(p => {
+      const pIdMatch = p.id?.toString() === strId;
+      const pNameMatch = normName && normalizeName(p.fullName) === normName;
+      return !pIdMatch && !pNameMatch;
+    });
+    currentDb.genetics = (currentDb.genetics || []).filter(g => g.playerId?.toString() !== strId);
+    currentDb.antropometri = (currentDb.antropometri || []).filter(m => m.playerId?.toString() !== strId);
+    currentDb.skills = (currentDb.skills || []).filter(s => s.playerId?.toString() !== strId);
+    currentDb.coach_reports = (currentDb.coach_reports || []).filter(r => r.playerId?.toString() !== strId);
+    currentDb.goals = (currentDb.goals || []).filter(g => g.playerId?.toString() !== strId);
+    currentDb.physicalMeasurements = (currentDb.physicalMeasurements || []).filter(m => m.playerId?.toString() !== strId);
 
     localDb.set(currentDb);
-    window.location.reload();
+    setDb(currentDb);
+    setDeletingId(null);
+    setConfirmDeleteId(null);
+    window.dispatchEvent(new Event('auth-changed'));
   };
 
   return (

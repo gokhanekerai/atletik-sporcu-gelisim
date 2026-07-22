@@ -69,13 +69,13 @@ export default function PlayerDetail() {
   const [antroForm, setAntroForm] = useState([]);
   const [teknikForm, setTeknikForm] = useState([]);
   const [taktikForm, setTaktikForm] = useState([]);
-  const [coachForm, setCoachForm] = useState({
-    'Genel Sezon Değerlendirmesi': '',
-    'Teknik ve Oyun Kimliği': '',
-    'Liderlik ve Takım Kültürü': '',
-    'Mental Profil': '',
-    'Gelecek Sezon Beklentisi': ''
-  });
+  const [coachForm, setCoachForm] = useState([
+    { title: 'Genel Sezon Değerlendirmesi', text: '' },
+    { title: 'Teknik ve Oyun Kimliği', text: '' },
+    { title: 'Liderlik ve Takım Kültürü', text: '' },
+    { title: 'Mental Profil', text: '' },
+    { title: 'Gelecek Sezon Beklentisi', text: '' }
+  ]);
   const [goalsForm, setGoalsForm] = useState([]);
   const [trackingForm, setTrackingForm] = useState([]);
 
@@ -123,13 +123,17 @@ export default function PlayerDetail() {
 
     // Coach Report
     const coachReport = (freshDb.coach_reports || []).find(r => r.playerId?.toString() === effectivePlayerId);
-    setCoachForm({
-      'Genel Sezon Değerlendirmesi': coachReport?.report?.['Genel Sezon Değerlendirmesi'] || '',
-      'Teknik ve Oyun Kimliği': coachReport?.report?.['Teknik ve Oyun Kimliği'] || '',
-      'Liderlik ve Takım Kültürü': coachReport?.report?.['Liderlik ve Takım Kültürü'] || '',
-      'Mental Profil': coachReport?.report?.['Mental Profil'] || '',
-      'Gelecek Sezon Beklentisi': coachReport?.report?.['Gelecek Sezon Beklentisi'] || ''
-    });
+    if (coachReport?.report && Object.keys(coachReport.report).length > 0) {
+      setCoachForm(Object.entries(coachReport.report).map(([title, text]) => ({ title, text: text || '' })));
+    } else {
+      setCoachForm([
+        { title: 'Genel Sezon Değerlendirmesi', text: '' },
+        { title: 'Teknik ve Oyun Kimliği', text: '' },
+        { title: 'Liderlik ve Takım Kültürü', text: '' },
+        { title: 'Mental Profil', text: '' },
+        { title: 'Gelecek Sezon Beklentisi', text: '' }
+      ]);
+    }
 
     // Goals & Tracking (Takip)
     setGoalsForm((freshDb.goals || []).filter(g => g.playerId?.toString() === effectivePlayerId));
@@ -169,7 +173,12 @@ export default function PlayerDetail() {
 
     // Update genetics
     const gIdx = currentDb.genetics.findIndex(g => g.playerId?.toString() === effectivePlayerId);
-    const newGenetics = { playerId: effectivePlayerId, ...geneticsForm };
+    const existingG = gIdx !== -1 ? currentDb.genetics[gIdx] : null;
+    const newGenetics = {
+      ...(existingG?._id ? { _id: existingG._id } : {}),
+      playerId: effectivePlayerId,
+      ...geneticsForm
+    };
     if (gIdx !== -1) {
       currentDb.genetics[gIdx] = newGenetics;
     } else {
@@ -246,10 +255,24 @@ export default function PlayerDetail() {
   const handleSaveCoachReport = () => {
     const currentDb = localDb.get();
     
+    if (!currentDb.coach_reports) currentDb.coach_reports = [];
     const reportIndex = currentDb.coach_reports.findIndex(r => r.playerId?.toString() === effectivePlayerId);
+    const existingReport = reportIndex !== -1 ? currentDb.coach_reports[reportIndex] : null;
+
+    const reportObj = {};
+    if (Array.isArray(coachForm)) {
+      coachForm.forEach(item => {
+        const key = item.title?.trim();
+        if (key) {
+          reportObj[key] = item.text || '';
+        }
+      });
+    }
+
     const newReport = {
+      ...(existingReport?._id ? { _id: existingReport._id } : {}),
       playerId: effectivePlayerId,
-      report: { ...coachForm }
+      report: reportObj
     };
 
     if (reportIndex !== -1) {
@@ -530,18 +553,29 @@ export default function PlayerDetail() {
           </div>
 
           {/* Coach Report */}
-          {coachForm && (
+          {coachForm && coachForm.length > 0 && (
             <div className="card">
               <div className="card-header"><div className="card-title">📝 Antrenör Değerlendirmesi</div></div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {Object.entries(coachForm)
-                  .filter(([k, v]) => k && v)
-                  .map(([title, text]) => (
-                    <div key={title}>
-                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--c-primary)', marginBottom: 6 }}>{title}</div>
-                      <div style={{ fontSize: '0.82rem', color: 'var(--c-text-2)', padding: '10px 14px', background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)', borderLeft: '3px solid var(--c-primary)' }}>{text}</div>
-                    </div>
-                  ))}
+                {Array.isArray(coachForm) ? (
+                  coachForm
+                    .filter(sec => sec.title && sec.text)
+                    .map((sec, idx) => (
+                      <div key={idx}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--c-primary)', marginBottom: 6 }}>{sec.title}</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--c-text-2)', padding: '10px 14px', background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)', borderLeft: '3px solid var(--c-primary)' }}>{sec.text}</div>
+                      </div>
+                    ))
+                ) : (
+                  Object.entries(coachForm)
+                    .filter(([k, v]) => k && v)
+                    .map(([title, text]) => (
+                      <div key={title}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--c-primary)', marginBottom: 6 }}>{title}</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--c-text-2)', padding: '10px 14px', background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)', borderLeft: '3px solid var(--c-primary)' }}>{text}</div>
+                      </div>
+                    ))
+                )}
               </div>
             </div>
           )}
@@ -940,24 +974,69 @@ export default function PlayerDetail() {
       {activeTab === 'edit-5' && (
         <div className="card">
           <div className="card-header"><div className="card-title">5. Antrenör Değerlendirme Raporu</div></div>
+          
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
-            {Object.keys(coachForm).map(key => (
-              <div key={key} className="form-group">
-                <label className="form-label" style={{ fontWeight: 700, color: 'var(--c-primary)' }}>{key}</label>
-                <textarea 
-                  rows={3} 
-                  className="form-input" 
-                  value={coachForm[key]} 
-                  onChange={e => {
-                    setCoachForm({ ...coachForm, [key]: e.target.value });
-                  }} 
-                />
+            {Array.isArray(coachForm) && coachForm.map((item, idx) => (
+              <div key={idx} style={{ background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)', padding: 14, border: '1px solid var(--c-border)' }}>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 8, alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--c-primary)' }}>Rapor Başlığı / Konu</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      style={{ padding: '6px 10px', fontSize: '0.85rem', fontWeight: 600 }}
+                      placeholder="örn. Genel Sezon Değerlendirmesi"
+                      value={item.title} 
+                      onChange={e => {
+                        const updated = [...coachForm];
+                        updated[idx].title = e.target.value;
+                        setCoachForm(updated);
+                      }} 
+                    />
+                  </div>
+                  <button 
+                    className="btn btn-ghost" 
+                    title="Satırı / Bölümü Sil"
+                    style={{ marginTop: 18 }}
+                    onClick={() => {
+                      const updated = coachForm.filter((_, i) => i !== idx);
+                      setCoachForm(updated);
+                    }}
+                  >
+                    <Trash2 size={16} style={{ color: 'var(--c-red)' }} />
+                  </button>
+                </div>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Değerlendirme Açıklaması</label>
+                  <textarea 
+                    rows={3} 
+                    className="form-input" 
+                    style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                    placeholder="Antrenör değerlendirme metnini yazın..."
+                    value={item.text} 
+                    onChange={e => {
+                      const updated = [...coachForm];
+                      updated[idx].text = e.target.value;
+                      setCoachForm(updated);
+                    }} 
+                  />
+                </div>
               </div>
             ))}
           </div>
-          <button className="btn btn-primary" onClick={handleSaveCoachReport} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Save size={16} /> Kaydet
-          </button>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => setCoachForm([...coachForm, { title: '', text: '' }])}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Plus size={16} /> Satır / Bölüm Ekle
+            </button>
+            <button className="btn btn-primary" onClick={handleSaveCoachReport} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Save size={16} /> Kaydet
+            </button>
+          </div>
         </div>
       )}
 
