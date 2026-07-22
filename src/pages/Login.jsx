@@ -21,53 +21,51 @@ export default function Login() {
     const isDemoAdmin = email === 'admin@atletik.com' && password === 'admin123';
     const isDemoSuperAdmin = email === 'superadmin@atletik.com' && password === 'super123';
 
-    // 1. Student Login Logic
-    if (role === 'student') {
-      try {
-        let matchedPlayer = null;
+    // Auto-detect student profile by email & password
+    let matchedStudent = null;
+    try {
+      const db = localDb.get();
+      const playersList = db.profiles || [];
+      matchedStudent = playersList.find(p => 
+        p.email && p.email.toLowerCase() === email.toLowerCase() && 
+        (p.password ? p.password.toString() === password.toString() : p.jerseyNumber?.toString() === password.toString())
+      );
 
-        // Try local database profiles first
-        const db = localDb.get();
-        const playersList = db.profiles || [];
-        matchedPlayer = playersList.find(p => 
-          p.email && p.email.toLowerCase() === email.toLowerCase() && 
-          (p.password ? p.password.toString() === password.toString() : p.jerseyNumber?.toString() === password.toString())
-        );
-
-        // If not found locally, fetch directly from Supabase profiles
-        if (!matchedPlayer && isSupabaseConfigured) {
-          const { data: cloudProfiles, error: cloudErr } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('role', 'student');
-          
-          if (!cloudErr && cloudProfiles) {
-            matchedPlayer = cloudProfiles.find(p => 
-              p.email && p.email.toLowerCase() === email.toLowerCase() && 
-              (p.password ? p.password.toString() === password.toString() : p.jersey_number?.toString() === password.toString())
-            );
-          }
+      if (!matchedStudent && isSupabaseConfigured) {
+        const { data: cloudProfiles, error: cloudErr } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'student');
+        
+        if (!cloudErr && cloudProfiles) {
+          matchedStudent = cloudProfiles.find(p => 
+            p.email && p.email.toLowerCase() === email.toLowerCase() && 
+            (p.password ? p.password.toString() === password.toString() : p.jersey_number?.toString() === password.toString())
+          );
         }
-
-        // Demo fallback
-        if (!matchedPlayer && email === 'ogrenci@atletik.com' && password === '7') {
-          matchedPlayer = { id: '1', role: 'student' };
-        }
-
-        if (matchedPlayer) {
-          localStorage.setItem('user_role', 'student');
-          localStorage.setItem('user_id', matchedPlayer.id.toString());
-          window.dispatchEvent(new Event('auth-changed'));
-          navigate(`/players/${matchedPlayer.id}`);
-        } else {
-          setError('Öğrenci bulunamadı veya şifre hatalı. Şifreniz forma numaranızdır.');
-        }
-      } catch (err) {
-        setError(err.message || 'Öğrenci girişi sırasında bir hata oluştu.');
-      } finally {
-        setLoading(false);
       }
-      return;
+    } catch (err) {
+      console.warn('Auto-detect student login exception:', err);
+    }
+
+    const isDemoStudent = email === 'ogrenci@atletik.com' && password === '7';
+
+    // 1. Student Login Logic (Auto-directed if matched or student tab selected)
+    if (role === 'student' || matchedStudent || isDemoStudent) {
+      const finalStudent = matchedStudent || (isDemoStudent ? { id: '1', role: 'student' } : null);
+      
+      if (finalStudent) {
+        localStorage.setItem('user_role', 'student');
+        localStorage.setItem('user_id', finalStudent.id.toString());
+        window.dispatchEvent(new Event('auth-changed'));
+        navigate(`/players/${finalStudent.id}`);
+        setLoading(false);
+        return;
+      } else if (role === 'student') {
+        setError('Öğrenci bulunamadı veya şifre hatalı. Şifreniz forma numaranızdır.');
+        setLoading(false);
+        return;
+      }
     }
 
     // 2. Admin / Super Admin Login Logic
