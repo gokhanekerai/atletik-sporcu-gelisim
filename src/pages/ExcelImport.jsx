@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, PlayCircle, Copy, Check, Sparkles, Download 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { isSupabaseConfigured, supabase, localDb } from '../lib/supabase';
+import { isSupabaseConfigured, supabase, localDb, normalizeName } from '../lib/supabase';
 
 const CHATGPT_PROMPT_TEMPLATE = `Sen bir basketbol antrenörüne yardım eden uzman bir spor analisti asistanısın. Aşağıda bir antrenörün serbest metin olarak yazdığı sporcu gözlemleri, notlar ve bilgiler yer almaktadır. Bu bilgileri analiz ederek belirtilen JSON formatında çıktı üret.
 
@@ -319,6 +319,49 @@ function sanitizeAndHydrate(player) {
 async function saveToDatabase(parsedData) {
   const newPlayerId = Date.now().toString() + Math.random().toString(36).slice(2, 6);
 
+  // If a profile with the same name already exists in Supabase or local storage, delete it first to prevent duplicates!
+  const db = localDb.get();
+  const normalizedNewName = normalizeName(parsedData.fullName);
+  const existing = (db.profiles || []).find(p => normalizeName(p.fullName) === normalizedNewName);
+  
+  if (isSupabaseConfigured) {
+    // Check in Supabase profiles too, just to be sure we match any cloud duplicates
+    const { data: cloudProfiles } = await supabase.from('profiles').select('id, full_name');
+    const cloudMatch = (cloudProfiles || []).find(cp => normalizeName(cp.full_name) === normalizedNewName);
+    const oldId = cloudMatch?.id?.toString() || existing?.id?.toString();
+
+    if (oldId) {
+      const runDelete = async (table, col, val) => {
+        try {
+          await supabase.from(table).delete().eq(col, val);
+        } catch (e) {
+          console.warn(`Excel pre-delete from ${table} failed:`, e.message);
+        }
+      };
+
+      await runDelete('antropometri', 'player_id', oldId);
+      await runDelete('skills', 'player_id', oldId);
+      await runDelete('coach_reports', 'player_id', oldId);
+      await runDelete('goals', 'player_id', oldId);
+      await runDelete('genetics', 'player_id', oldId);
+      await runDelete('physical_measurements', 'player_id', oldId);
+      await runDelete('profiles', 'id', oldId);
+    }
+  }
+
+  // Always clean the old local storage entries for this player name
+  if (existing) {
+    const oldId = existing.id?.toString();
+    db.profiles = (db.profiles || []).filter(p => p.id?.toString() !== oldId);
+    db.genetics = (db.genetics || []).filter(g => g.playerId?.toString() !== oldId);
+    db.antropometri = (db.antropometri || []).filter(m => m.playerId?.toString() !== oldId);
+    db.skills = (db.skills || []).filter(s => s.playerId?.toString() !== oldId);
+    db.coach_reports = (db.coach_reports || []).filter(r => r.playerId?.toString() !== oldId);
+    db.goals = (db.goals || []).filter(g => g.playerId?.toString() !== oldId);
+    db.physicalMeasurements = (db.physicalMeasurements || []).filter(m => m.playerId?.toString() !== oldId);
+    localDb.set(db);
+  }
+
   if (isSupabaseConfigured) {
     const { data: player, error: playerError } = await supabase
       .from('profiles')
@@ -345,34 +388,32 @@ async function saveToDatabase(parsedData) {
     if (goalInserts.length) { const { error } = await supabase.from('goals').insert(goalInserts); if (error) throw error; }
 
   } else {
-    const db = localDb.get();
-    if (!db.profiles) db.profiles = [];
-    if (!db.genetics) db.genetics = [];
-    if (!db.antropometri) db.antropometri = [];
-    if (!db.skills) db.skills = [];
-    if (!db.coach_reports) db.coach_reports = [];
-    if (!db.goals) db.goals = [];
-    if (!db.physicalMeasurements) db.physicalMeasurements = [];
+    const freshDb = localDb.get();
+    if (!freshDb.profiles) freshDb.profiles = [];
+    if (!freshDb.genetics) freshDb.genetics = [];
+    if (!freshDb.antropometri) freshDb.antropometri = [];
+    if (!freshDb.skills) freshDb.skills = [];
+    if (!freshDb.coach_reports) freshDb.coach_reports = [];
+    if (!freshDb.goals) freshDb.goals = [];
+    if (!freshDb.physicalMeasurements) freshDb.physicalMeasurements = [];
 
     const email = `${parsedData.fullName.toLowerCase().replace(/\s+/g, '')}@atletik.com`;
     
-    // Remove if player already exists to prevent duplicate profiles during imports
-    db.profiles = db.profiles.filter(p => p.fullName?.toLowerCase() !== parsedData.fullName?.toLowerCase());
+    // Safety filter
+    freshDb.profiles = freshDb.profiles.filter(p => normalizeName(p.fullName) !== normalizedNewName);
     
-    db.profiles.push({ id: newPlayerId, email, password: '10', fullName: parsedData.fullName, jerseyNumber: parsedData.jerseyNumber || 10, role: 'student', birthDate: parsedData.kimlik.birthDate, category: parsedData.kimlik.category, avatarUrl: null, status: 'active', position: parsedData.position || '1 – Oyun Kurucu', dominantHand: parsedData.dominantHand || 'right' });
-    db.genetics.push({ playerId: newPlayerId, fatherHeight: parsedData.kimlik.fatherHeight, motherHeight: parsedData.kimlik.motherHeight, targetHeight: parsedData.kimlik.targetHeight, note: parsedData.geneticNote, allergy: parsedData.kimlik.allergy });
-    db.antropometri = db.antropometri.concat(parsedData.measurements.map(m => ({ playerId: newPlayerId, date: new Date().toISOString().slice(0, 10), ...m })));
-    db.skills = db.skills.concat([
+    freshDb.profiles.push({ id: newPlayerId, email, password: '10', fullName: parsedData.fullName, jerseyNumber: parsedData.jerseyNumber || 10, role: 'student', birthDate: parsedData.kimlik.birthDate, category: parsedData.kimlik.category, avatarUrl: null, status: 'active', position: parsedData.position || '1 – Oyun Kurucu', dominantHand: parsedData.dominantHand || 'right' });
+    freshDb.genetics.push({ playerId: newPlayerId, fatherHeight: parsedData.kimlik.fatherHeight, motherHeight: parsedData.kimlik.motherHeight, targetHeight: parsedData.kimlik.targetHeight, note: parsedData.geneticNote, allergy: parsedData.kimlik.allergy });
+    freshDb.antropometri = freshDb.antropometri.concat(parsedData.measurements.map(m => ({ playerId: newPlayerId, date: new Date().toISOString().slice(0, 10), ...m })));
+    freshDb.skills = freshDb.skills.concat([
       ...parsedData.teknikSkills.map(s => ({ ...s, playerId: newPlayerId, type: 'teknik' })),
       ...parsedData.taktikSkills.map(s => ({ ...s, playerId: newPlayerId, type: 'taktik' }))
     ]);
-    db.coach_reports.push({ playerId: newPlayerId, report: parsedData.coachReport });
-    db.goals = db.goals.concat(parsedData.goalsList.map(g => ({ playerId: newPlayerId, ...g, status: 'active' })));
+    freshDb.coach_reports.push({ playerId: newPlayerId, report: parsedData.coachReport });
+    freshDb.goals = freshDb.goals.concat(parsedData.goalsList.map(g => ({ playerId: newPlayerId, ...g, status: 'active' })));
+    freshDb.physicalMeasurements = freshDb.physicalMeasurements.concat(parsedData.trackingList.map(t => ({ playerId: newPlayerId, ...t })));
     
-    // Save physical tracking history
-    db.physicalMeasurements = db.physicalMeasurements.concat(parsedData.trackingList.map(t => ({ playerId: newPlayerId, ...t })));
-    
-    localDb.set(db);
+    localDb.set(freshDb);
   }
 }
 

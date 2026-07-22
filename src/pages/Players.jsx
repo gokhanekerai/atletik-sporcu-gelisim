@@ -199,17 +199,22 @@ export default function Players() {
     localDb.markDeleted(strId);
 
     if (isSupabaseConfigured) {
-      try {
-        await supabase.from('antropometri').delete().eq('player_id', strId);
-        await supabase.from('skills').delete().eq('player_id', strId);
-        await supabase.from('coach_reports').delete().eq('player_id', strId);
-        await supabase.from('goals').delete().eq('player_id', strId);
-        await supabase.from('genetics').delete().eq('player_id', strId);
-        await supabase.from('physical_measurements').delete().eq('player_id', strId);
-        await supabase.from('profiles').delete().eq('id', strId);
-      } catch(err) {
-        console.warn('Supabase cloud delete exception:', err);
-      }
+      const runDelete = async (table, col, val) => {
+        try {
+          const { error } = await supabase.from(table).delete().eq(col, val);
+          if (error) console.warn(`Supabase delete from ${table} failed:`, error.message);
+        } catch (e) {
+          console.warn(`Supabase delete from ${table} exception:`, e.message);
+        }
+      };
+
+      await runDelete('antropometri', 'player_id', strId);
+      await runDelete('skills', 'player_id', strId);
+      await runDelete('coach_reports', 'player_id', strId);
+      await runDelete('goals', 'player_id', strId);
+      await runDelete('genetics', 'player_id', strId);
+      await runDelete('physical_measurements', 'player_id', strId);
+      await runDelete('profiles', 'id', strId);
     }
 
     // Clean ONLY entries matching this specific playerId (never match by fullName!)
@@ -237,20 +242,25 @@ export default function Players() {
     const currentDb = localDb.get();
     const stringIds = selectedIds.map(id => id.toString());
 
+    const runDelete = async (table, col, val) => {
+      try {
+        const { error } = await supabase.from(table).delete().eq(col, val);
+        if (error) console.warn(`Supabase bulk delete from ${table} failed:`, error.message);
+      } catch (e) {
+        console.warn(`Supabase bulk delete from ${table} exception:`, e.message);
+      }
+    };
+
     for (const strId of stringIds) {
       localDb.markDeleted(strId);
       if (isSupabaseConfigured) {
-        try {
-          await supabase.from('antropometri').delete().eq('player_id', strId);
-          await supabase.from('skills').delete().eq('player_id', strId);
-          await supabase.from('coach_reports').delete().eq('player_id', strId);
-          await supabase.from('goals').delete().eq('player_id', strId);
-          await supabase.from('genetics').delete().eq('player_id', strId);
-          await supabase.from('physical_measurements').delete().eq('player_id', strId);
-          await supabase.from('profiles').delete().eq('id', strId);
-        } catch(err) {
-          console.warn('Supabase bulk delete exception:', err);
-        }
+        await runDelete('antropometri', 'player_id', strId);
+        await runDelete('skills', 'player_id', strId);
+        await runDelete('coach_reports', 'player_id', strId);
+        await runDelete('goals', 'player_id', strId);
+        await runDelete('genetics', 'player_id', strId);
+        await runDelete('physical_measurements', 'player_id', strId);
+        await runDelete('profiles', 'id', strId);
       }
     }
 
@@ -267,6 +277,7 @@ export default function Players() {
     setSelectedIds([]);
     setConfirmBulkDelete(false);
     setIsBulkDeleting(false);
+    setIsSelectMode(false);
     window.dispatchEvent(new Event('auth-changed'));
   };
 
