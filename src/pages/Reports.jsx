@@ -5,6 +5,15 @@ import { localDb } from '../lib/supabase';
 
 const initials = name => name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
 
+const sanitizeTurkish = (str) => {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/\u0219/g, 'ş')
+    .replace(/\u0218/g, 'Ş')
+    .replace(/\u021B/g, 't')
+    .replace(/\u021A/g, 'T');
+};
+
 export default function Reports() {
   const { t } = useTranslation();
   const [reportType, setReportType] = useState('individual');
@@ -1401,8 +1410,8 @@ export default function Reports() {
                     />
                     <div className="report-hero-prep-t" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                       <p style={{ margin: 0, fontSize: '8.5px', color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em' }}>HAZIRLAYAN</p>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#ffffff', fontWeight: 800, fontFamily: 'Orbitron, sans-serif' }}>{coachName}</p>
-                      <p style={{ margin: 0, fontSize: '8px', color: '#cbd5e1', fontWeight: 600, marginTop: '2px' }}>{coachTitle}</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#ffffff', fontWeight: 800, fontFamily: 'Orbitron, sans-serif' }}>{sanitizeTurkish(coachName)}</p>
+                      <p style={{ margin: 0, fontSize: '8px', color: '#cbd5e1', fontWeight: 600, marginTop: '2px' }}>{sanitizeTurkish(coachTitle)}</p>
                     </div>
                   </div>
                   <div style={{ marginTop: '10px', fontSize: '10.5px', color: '#ff6b35', fontWeight: 700, letterSpacing: '0.02em', lineHeight: 1.4, textShadow: '0 0 10px rgba(255, 107, 53, 0.4)', textAlign: 'center', width: '100%', fontFamily: 'Orbitron, sans-serif' }}>
@@ -1608,8 +1617,8 @@ export default function Reports() {
                   <p style={{ fontSize: 10, color: '#64748b' }}>Antrenör raporu yüklenmemiş</p>
                 )}
 
-                <div className="report-c-sign">{coachName}</div>
-                <div className="report-c-sign-sub">{coachTitle}</div>
+                <div className="report-c-sign">{sanitizeTurkish(coachName)}</div>
+                <div className="report-c-sign-sub">{sanitizeTurkish(coachTitle)}</div>
                 <div className="report-pnum">06</div>
               </div>
             </div>
