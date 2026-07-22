@@ -35,8 +35,7 @@ export default function PlayerDetail() {
   ];
 
   const studentTabs = [
-    { key: 'report', label: 'Sporcu Raporu', icon: Shield },
-    { key: 'goals', label: 'Hedefler', icon: Target }
+    { key: 'report', label: 'Sporcu Raporu', icon: Shield }
   ];
 
   const tabs = isAdmin ? adminTabs : studentTabs;
@@ -697,7 +696,13 @@ export default function PlayerDetail() {
                       <div style={{ fontSize: '0.68rem', color: 'var(--c-primary)', fontWeight: 700 }}>{g.category}</div>
                       <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{g.title}</div>
                     </div>
-                    <span className="badge badge-orange">🎯 Devam</span>
+                    {g.status === 'achieved' ? (
+                      <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', background: 'rgba(46,204,113,0.12)', color: '#2ecc71', border: '1px solid rgba(46,204,113,0.25)', whiteSpace: 'nowrap' }}>✅ Tamamlandı</span>
+                    ) : g.status === 'missed' ? (
+                      <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', background: 'rgba(231,76,60,0.12)', color: '#e74c3c', border: '1px solid rgba(231,76,60,0.25)', whiteSpace: 'nowrap' }}>❌ Kaçırıldı</span>
+                    ) : (
+                      <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', background: 'rgba(255,107,53,0.12)', color: 'var(--c-primary)', border: '1px solid rgba(255,107,53,0.25)', whiteSpace: 'nowrap' }}>🎯 Devam</span>
+                    )}
                   </div>
                 ))}
               </div>

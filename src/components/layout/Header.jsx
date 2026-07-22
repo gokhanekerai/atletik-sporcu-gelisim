@@ -47,6 +47,7 @@ export default function Header({ onMenuClick }) {
 
         {/* DB Connection Status Badge */}
         <div 
+          className="header-db-status"
           style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -83,7 +84,7 @@ export default function Header({ onMenuClick }) {
         </div>
 
         {/* Notification Bell */}
-        <button className="btn btn-ghost btn-icon" style={{ position: 'relative' }}>
+        <button className="btn btn-ghost btn-icon header-bell" style={{ position: 'relative' }}>
           <Bell size={18} />
           <span style={{
             position: 'absolute', top: 4, right: 4,
@@ -95,6 +96,7 @@ export default function Header({ onMenuClick }) {
 
         {/* Avatar / Sign Out */}
         <div 
+          className="header-logout"
           onClick={() => {
             localStorage.removeItem('user_role');
             localStorage.removeItem('user_id');

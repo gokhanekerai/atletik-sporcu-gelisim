@@ -301,6 +301,8 @@ select option { background: var(--c-surface); }
   flex-direction: column;
   overflow: hidden;
   background: var(--c-bg);
+  min-height: 0;
+  min-width: 0;
 }
 
 /* â”€â”€ Top Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -399,8 +401,11 @@ select option { background: var(--c-surface); }
 .page-content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: var(--space-8);
   background: var(--g-hero);
+  min-height: 0;
+  min-width: 0;
 }
 
 /* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -1159,6 +1164,26 @@ tbody td {
   /* Adjust main content flex to take full width */
   .main-content {
     width: 100% !important;
+  }
+
+  /* Mobile Header optimizations to prevent layout overflow */
+  .header-db-status {
+    display: none !important;
+  }
+  .lang-toggle {
+    display: none !important;
+  }
+  .header-bell {
+    display: none !important;
+  }
+  .header-logout span {
+    display: none !important; /* Hide 'Çıkış' text, keep only avatar */
+  }
+  .header-actions {
+    gap: var(--space-2) !important;
+  }
+  .top-header {
+    justify-content: space-between !important;
   }
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
