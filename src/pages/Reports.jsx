@@ -37,11 +37,11 @@ export default function Reports() {
     const existing = rawAntro.find(m => m.metric?.toLowerCase() === metricName.toLowerCase());
     return existing ? { ...existing } : { metric: metricName, val2025: '—', val2026: '—', change: '—', comment: '' };
   });
-  const playerSkills = (db.skills || []).filter(s => s.playerId?.toString() === effectivePlayerId);
-  const playerGenetics = (db.genetics || []).find(g => g.playerId?.toString() === effectivePlayerId);
-  const playerCoachReport = (db.coach_reports || []).find(r => r.playerId?.toString() === effectivePlayerId);
-  const playerGoals = (db.goals || []).filter(g => g.playerId?.toString() === effectivePlayerId);
-  const playerTracking = (db.physicalMeasurements || []).filter(m => m.playerId?.toString() === effectivePlayerId);
+  const playerSkills = (db.skills || []).filter(s => (s.playerId || s.player_id)?.toString() === effectivePlayerId);
+  const playerGenetics = (db.genetics || []).find(g => (g.playerId || g.player_id)?.toString() === effectivePlayerId);
+  const playerCoachReport = (db.coach_reports || []).find(r => (r.playerId || r.player_id)?.toString() === effectivePlayerId);
+  const playerGoals = (db.goals || []).filter(g => (g.playerId || g.player_id)?.toString() === effectivePlayerId);
+  const playerTracking = (db.physicalMeasurements || []).filter(m => (m.playerId || m.player_id)?.toString() === effectivePlayerId);
 
   const teknikSkills = playerSkills.filter(s => s.type === 'teknik');
   const allTaktikSkills = playerSkills.filter(s => s.type === 'taktik');
@@ -157,7 +157,7 @@ export default function Reports() {
     <div>
       {/* SCOPED REPORT STYLES */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@400;500;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&subset=latin,latin-ext&display=swap');
 
         .report-grid {
           display: grid;
@@ -1733,8 +1733,8 @@ export default function Reports() {
                       {playerTracking.map((t, idx) => (
                         <tr key={idx}>
                           <td style={{ fontWeight: 'bold', color: '#fff' }}>{t.date}</td>
-                          <td>{t.heightCm ? `${t.heightCm} cm` : '—'}</td>
-                          <td>{t.weightKg ? `${t.weightKg} kg` : '—'}</td>
+                          <td>{(t.heightCm || t.height_cm) ? `${t.heightCm || t.height_cm} cm` : '—'}</td>
+                          <td>{(t.weightKg || t.weight_kg) ? `${t.weightKg || t.weight_kg} kg` : '—'}</td>
                           <td>{t.kulac ? `${t.kulac} cm` : '—'}</td>
                           <td>{t.bel ? `${t.bel} cm` : '—'}</td>
                           <td>{t.omuz ? `${t.omuz} cm` : '—'}</td>
