@@ -466,6 +466,23 @@ export default function Players() {
                     <span>·</span>
                     <span>{player.dominantHand === 'right' ? '🤜 Sağ El' : '🤛 Sol El'}</span>
                   </div>
+                  
+                  {/* Credentials (email / password) */}
+                  <div style={{
+                    marginTop: 6,
+                    display: 'flex',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                    fontSize: '0.75rem',
+                    background: 'rgba(255, 107, 53, 0.05)',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    border: '1px dashed rgba(255, 107, 53, 0.15)',
+                    width: 'fit-content'
+                  }}>
+                    <span style={{ color: 'var(--c-text-2)' }}>📧 E-posta: <strong style={{ color: 'var(--c-text)', userSelect: 'all' }}>{player.email || '—'}</strong></span>
+                    <span style={{ color: 'var(--c-text-2)', marginLeft: 6 }}>🔑 Şifre: <strong style={{ color: 'var(--c-text)', userSelect: 'all' }}>{player.password || player.jerseyNumber || '—'}</strong></span>
+                  </div>
                 </div>
 
                 {/* Excel Stats summary */}
