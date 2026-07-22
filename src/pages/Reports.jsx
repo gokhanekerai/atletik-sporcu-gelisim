@@ -1455,35 +1455,17 @@ export default function Reports() {
 
             {/* PAGE 3: TAKTİK & ZİHİNSEL ANALİZ & COACH REPORT */}
             <div className="print-page">
-              {/* PAGE 5: TAKTİK & ZİHİNSEL ANALİZ */}
+              {/* PAGE 5: TAKTİK, MENTAL & FİZİKSEL ANALİZ */}
               <div className="report-panel">
                 <div className="report-panel-header">
                   <div className="report-panel-num">4</div>
-                  <div className="report-panel-title">Taktik & Zihinsel Analiz</div>
+                  <div className="report-panel-title">Taktik, Mental & Fiziksel Analiz</div>
                   <img src="/logo1.jpeg" alt="ATL" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 0 8px rgba(255, 107, 53, 0.7)', border: '1px solid rgba(255, 107, 53, 0.4)' }} onError={(e) => {e.target.src = '/logo.jpeg'}} />
                 </div>
 
-                <div className="report-section-label">⚡ Taktiksel Beceriler</div>
-                {taktikSkills.length > 0 ? (
-                  taktikSkills.map((s, i) => (
-                    <div key={i} className="report-skill-row">
-                      <div className="report-skill-name">{s.name}</div>
-                      <div style={{ paddingTop: 3 }}><span className="report-dot-g"></span></div>
-                      <div className="report-skill-txt">{s.analysis}</div>
-                    </div>
-                  ))
-                ) : (
-                  <p style={{ fontSize: 10, color: '#64748b' }}>Taktik analiz verisi yüklenmemiş</p>
-                )}
-
-                <div className="report-legend">
-                  <span><span className="report-legend-dot" style={{ background: '#27ae60' }}></span> Güçlü Yön</span>
-                  <span><span className="report-legend-dot" style={{ background: '#f1c40f' }}></span> Gelişim Alanı</span>
-                </div>
-
-                <div className="report-section-label" style={{ marginTop: 14 }}>🧠 Zihinsel & Duygusal Beceriler</div>
-                {zihinselSkills.length > 0 ? (
-                  zihinselSkills.map((s, i) => (
+                <div className="report-section-label">⚡ Taktik, Mental & Fiziksel Beceriler</div>
+                {allTaktikSkills.length > 0 ? (
+                  allTaktikSkills.map((s, i) => (
                     <div key={i} className="report-skill-row">
                       <div className="report-skill-name">{s.name}</div>
                       <div style={{ paddingTop: 3 }}>
@@ -1493,8 +1475,13 @@ export default function Reports() {
                     </div>
                   ))
                 ) : (
-                  <p style={{ fontSize: 10, color: '#64748b' }}>Zihinsel analiz verisi yüklenmemiş</p>
+                  <p style={{ fontSize: 10, color: '#64748b' }}>Taktik, mental ve fiziksel analiz verisi yüklenmemiş</p>
                 )}
+
+                <div className="report-legend" style={{ marginTop: 20 }}>
+                  <span><span className="report-legend-dot" style={{ background: '#27ae60' }}></span> Güçlü Yön</span>
+                  <span><span className="report-legend-dot" style={{ background: '#f1c40f' }}></span> Gelişim Alanı</span>
+                </div>
                 <div className="report-pnum">05</div>
               </div>
 
