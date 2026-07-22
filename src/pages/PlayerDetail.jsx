@@ -9,20 +9,24 @@ import { localDb, supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const initials = name => name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
 
-const getDisplayChange = (m) => {
-  if (m.change && m.change !== '—' && m.change !== '-') {
-    return m.change;
-  }
-  if (!m.val2025 || !m.val2026) return '—';
-  const str25 = m.val2025.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
-  const str26 = m.val2026.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+const calculateChangeForForm = (val25, val26, metric) => {
+  if (!val25 || !val26) return '—';
+  const str25 = val25.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
+  const str26 = val26.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
   const v25 = parseFloat(str25);
   const v26 = parseFloat(str26);
   if (isNaN(v25) || isNaN(v26)) return '—';
   const diff = v26 - v25;
-  const unit = m.metric === 'Kilo' ? 'kg' : 'cm';
+  const unit = metric === 'Kilo' ? 'kg' : 'cm';
   const sign = diff > 0 ? '+' : '';
   return `${sign}${parseFloat(diff.toFixed(1))} ${unit}`;
+};
+
+const getDisplayChange = (m) => {
+  if (m.change && m.change !== '—' && m.change !== '-') {
+    return m.change;
+  }
+  return calculateChangeForForm(m.val2025, m.val2026, m.metric);
 };
 
 export default function PlayerDetail() {
@@ -125,7 +129,11 @@ export default function PlayerDetail() {
     // Antropometri - Load player's measurements (preserve all existing & custom metrics)
     const antro = (freshDb.antropometri || []).filter(m => m.playerId?.toString() === effectivePlayerId);
     if (antro.length > 0) {
-      setAntroForm(antro);
+      const mapped = antro.map(m => ({
+        ...m,
+        change: calculateChangeForForm(m.val2025, m.val2026, m.metric)
+      }));
+      setAntroForm(mapped);
     } else {
       const defaultMetrics = ['Boy', 'Kilo', 'Kulaç', 'Bel', 'Omuz', 'Bacak'];
       setAntroForm(defaultMetrics.map(metricName => ({ metric: metricName, val2025: '', val2026: '', change: '', comment: '' })));
@@ -235,7 +243,7 @@ export default function PlayerDetail() {
             date: a.date,
             metric: a.metric,
             val_2025: a.val2025?.toString(),
-            val_2026: a.val_2026?.toString(),
+            val_2026: a.val2026?.toString(),
             change_val: a.change?.toString(),
             comment: a.comment
           }));
@@ -848,6 +856,7 @@ export default function PlayerDetail() {
                         onChange={e => {
                           const updated = [...antroForm];
                           updated[idx].val2025 = e.target.value;
+                          updated[idx].change = calculateChangeForForm(e.target.value, updated[idx].val2026, updated[idx].metric);
                           setAntroForm(updated);
                         }}
                       />
@@ -861,6 +870,7 @@ export default function PlayerDetail() {
                         onChange={e => {
                           const updated = [...antroForm];
                           updated[idx].val2026 = e.target.value;
+                          updated[idx].change = calculateChangeForForm(updated[idx].val2025, e.target.value, updated[idx].metric);
                           setAntroForm(updated);
                         }}
                       />
