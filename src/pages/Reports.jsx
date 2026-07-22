@@ -1449,7 +1449,7 @@ export default function Reports() {
                 }}>
                   <div className="report-hero-img-bg"></div>
                   {!selectedPlayer.avatarUrl && <div className="report-hero-img-emoji">🏀</div>}
-                  <div className="report-hero-num">0</div>
+                  <div className="report-hero-num">{selectedPlayer.jerseyNumber || 0}</div>
                 </div>
 
                 <div className="report-hero-name">
