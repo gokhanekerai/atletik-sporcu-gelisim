@@ -5,7 +5,7 @@ import {
   ArrowLeft, Target, Shield, Key, Camera, Ruler, 
   Save, Plus, Trash2, FileText, Heart, Activity
 } from 'lucide-react';
-import { localDb } from '../lib/supabase';
+import { localDb, supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const initials = name => name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
 
@@ -189,66 +189,131 @@ export default function PlayerDetail() {
   };
 
   // 2. Antropometri
-  const handleSaveAntropometri = () => {
+  const handleSaveAntropometri = async () => {
     const currentDb = localDb.get();
     
     // Clean old antro entries for player
     currentDb.antropometri = (currentDb.antropometri || []).filter(m => m.playerId?.toString() !== effectivePlayerId);
     
     // Insert updated records
+    const records = [];
     antroForm.forEach(item => {
       if (item.metric) {
-        currentDb.antropometri.push({
+        const record = {
           playerId: effectivePlayerId,
           date: new Date().toISOString().split('T')[0],
           ...item
-        });
+        };
+        currentDb.antropometri.push(record);
+        records.push(record);
       }
     });
 
     saveDb(currentDb, 'Antropometri ölçümleri kaydedildi!');
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('antropometri').delete().eq('player_id', effectivePlayerId);
+        if (records.length > 0) {
+          const mapped = records.map(a => ({
+            player_id: a.playerId,
+            date: a.date,
+            metric: a.metric,
+            val_2025: a.val2025?.toString(),
+            val_2026: a.val_2026?.toString(),
+            change_val: a.change?.toString(),
+            comment: a.comment
+          }));
+          await supabase.from('antropometri').insert(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to sync antropometri to Supabase:', err);
+      }
+    }
   };
 
   // 3. Teknik Analiz
-  const handleSaveTeknikAnaliz = () => {
+  const handleSaveTeknikAnaliz = async () => {
     const currentDb = localDb.get();
     
     // Clean old teknik skills for player
     currentDb.skills = (currentDb.skills || []).filter(s => !(s.playerId?.toString() === effectivePlayerId && s.type === 'teknik'));
     
     // Insert updated records
+    const records = [];
     teknikForm.forEach(item => {
       if (item.name) {
-        currentDb.skills.push({
+        const record = {
           playerId: effectivePlayerId,
           type: 'teknik',
           ...item
-        });
+        };
+        currentDb.skills.push(record);
+        records.push(record);
       }
     });
 
     saveDb(currentDb, 'Teknik Analiz becerileri kaydedildi!');
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('skills').delete().eq('player_id', effectivePlayerId).eq('type', 'teknik');
+        if (records.length > 0) {
+          const mapped = records.map(s => ({
+            player_id: s.playerId,
+            name: s.name,
+            type: s.type,
+            rating: s.status,
+            analysis: s.analysis
+          }));
+          await supabase.from('skills').insert(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to sync teknik skills to Supabase:', err);
+      }
+    }
   };
 
   // 4. Taktik & Mental
-  const handleSaveTaktikMental = () => {
+  const handleSaveTaktikMental = async () => {
     const currentDb = localDb.get();
     
     // Clean old taktik skills for player
     currentDb.skills = (currentDb.skills || []).filter(s => !(s.playerId?.toString() === effectivePlayerId && s.type === 'taktik'));
     
     // Insert updated records
+    const records = [];
     taktikForm.forEach(item => {
       if (item.name) {
-        currentDb.skills.push({
+        const record = {
           playerId: effectivePlayerId,
           type: 'taktik',
           ...item
-        });
+        };
+        currentDb.skills.push(record);
+        records.push(record);
       }
     });
 
     saveDb(currentDb, 'Taktik & Mental analiz bilgileri kaydedildi!');
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('skills').delete().eq('player_id', effectivePlayerId).eq('type', 'taktik');
+        if (records.length > 0) {
+          const mapped = records.map(s => ({
+            player_id: s.playerId,
+            name: s.name,
+            type: s.type,
+            rating: s.status,
+            analysis: s.analysis
+          }));
+          await supabase.from('skills').insert(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to sync taktik skills to Supabase:', err);
+      }
+    }
   };
 
   // 5. Coach Report
@@ -285,32 +350,73 @@ export default function PlayerDetail() {
   };
 
   // 6. Takip & Hedefler
-  const handleSaveTakipHedefler = () => {
+  const handleSaveTakipHedefler = async () => {
     const currentDb = localDb.get();
     
     // Save goals
     currentDb.goals = (currentDb.goals || []).filter(g => g.playerId?.toString() !== effectivePlayerId);
+    const goalsList = [];
     goalsForm.forEach(g => {
       if (g.title) {
-        currentDb.goals.push({
+        const record = {
           playerId: effectivePlayerId,
           ...g
-        });
+        };
+        currentDb.goals.push(record);
+        goalsList.push(record);
       }
     });
 
     // Save quarterly tracking records
     currentDb.physicalMeasurements = (currentDb.physicalMeasurements || []).filter(m => m.playerId?.toString() !== effectivePlayerId);
+    const trackingList = [];
     trackingForm.forEach(m => {
       if (m.date) {
-        currentDb.physicalMeasurements.push({
+        const record = {
           playerId: effectivePlayerId,
           ...m
-        });
+        };
+        currentDb.physicalMeasurements.push(record);
+        trackingList.push(record);
       }
     });
 
     saveDb(currentDb, 'Takip Hedefleri ve Ölçüm Takvimi kaydedildi!');
+
+    if (isSupabaseConfigured) {
+      try {
+        // Goals
+        await supabase.from('goals').delete().eq('player_id', effectivePlayerId);
+        if (goalsList.length > 0) {
+          const mappedGoals = goalsList.map(g => ({
+            player_id: g.playerId,
+            category: g.category,
+            title: g.title,
+            status: g.status || 'active'
+          }));
+          await supabase.from('goals').insert(mappedGoals);
+        }
+
+        // Physical tracking history
+        await supabase.from('physical_measurements').delete().eq('player_id', effectivePlayerId);
+        if (trackingList.length > 0) {
+          const mappedPM = trackingList.map(pm => ({
+            player_id: pm.playerId,
+            date: pm.date,
+            height_cm: pm.heightCm?.toString(),
+            weight_kg: pm.weightKg?.toString(),
+            kulac: pm.kulac?.toString(),
+            bel: pm.bel?.toString(),
+            omuz: pm.omuz?.toString(),
+            bacak: pm.bacak?.toString(),
+            note: pm.note
+          }));
+          await supabase.from('physical_measurements').insert(mappedPM);
+        }
+      } catch (err) {
+        console.error('Failed to sync goals/tracking to Supabase:', err);
+      }
+    }
   };
 
   // Helper lists & displays
