@@ -1370,7 +1370,7 @@ export default function Reports() {
                   <p>Kocaeli Atletik {selectedPlayer.category || 'U9/U10'}</p>
                 </div>
 
-                <div className="report-hero-footer-area">
+                <div className="report-hero-footer-area" style={{ width: '100%', boxSizing: 'border-box', padding: '0 8px' }}>
                   <div className="report-hero-prep" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                     <img 
                       src="/atleticplus_logo.jpeg" 
@@ -1386,14 +1386,16 @@ export default function Reports() {
                       }} 
                     />
                     <div className="report-hero-prep-t" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                      <p style={{ margin: 0, fontSize: '8px', color: '#64748b', fontWeight: 600, letterSpacing: '0.05em' }}>HAZIRLAYAN</p>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#ffffff', fontWeight: 800 }}>{coachName}</p>
+                      <p style={{ margin: 0, fontSize: '8.5px', color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em' }}>HAZIRLAYAN</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#ffffff', fontWeight: 800, fontFamily: 'Orbitron, sans-serif' }}>{coachName}</p>
                     </div>
                   </div>
-                  <div style={{ marginTop: '6px', fontSize: '8.5px', color: '#a78bfa', fontWeight: 600, letterSpacing: '0.03em', lineHeight: 1.2 }}>
-                    AtletikPlus yapay zeka destekli bilimsel analiz sporcu gelişim raporu
+                  <div style={{ marginTop: '8px', fontSize: '10.5px', color: '#00f2fe', fontWeight: 700, letterSpacing: '0.02em', lineHeight: 1.4, textShadow: '0 0 8px rgba(0, 242, 254, 0.4)', textAlign: 'center', width: '100%' }}>
+                    AtletikPlus Yapay Zeka Destekli Bilimsel Analiz Sporcu Gelişim Raporu
                   </div>
-                  <div className="report-hero-ai" style={{ marginTop: '4px' }}>🤖 Dijital Raporlama Desteği: ChatGPT (OpenAI)</div>
+                  <div style={{ marginTop: '6px', fontSize: '9px', color: '#cbd5e1', opacity: 0.9, textAlign: 'center', width: '100%', fontWeight: 500 }}>
+                    🤖 Dijital Raporlama Desteği: ChatGPT (OpenAI)
+                  </div>
                 </div>
                 <div className="report-pnum">01</div>
               </div>
