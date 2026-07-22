@@ -77,6 +77,70 @@ export default function Reports() {
   const belBoyRatio = (bel / boy).toFixed(2);
   const omuzBoyRatio = (omuz / boy).toFixed(2);
 
+  const getMetricGrowth = (metricName) => {
+    const item = playerAntro.find(m => m.metric?.toLowerCase() === metricName.toLowerCase());
+    if (!item) return 0;
+    const v25 = parseFloat(item.val2025?.toString()?.replace(',', '.'));
+    const v26 = parseFloat(item.val2026?.toString()?.replace(',', '.'));
+    if (!isNaN(v25) && !isNaN(v26)) {
+      return parseFloat((v26 - v25).toFixed(1));
+    }
+    return 0;
+  };
+
+  const boyGrowth = getMetricGrowth('Boy');
+  const kiloGrowth = getMetricGrowth('Kilo');
+
+  const generateScientificEvaluation = () => {
+    if (!selectedPlayer) return '';
+    const firstName = selectedPlayer.fullName?.split(' ')[0] || '';
+    
+    let evaluation = `${firstName} için `;
+
+    // 1. Boy gelişimi
+    if (boyGrowth > 6) {
+      evaluation += `yıllık boy uzama hızı oldukça yüksektir (yılda ${boyGrowth} cm). `;
+    } else if (boyGrowth > 3) {
+      evaluation += `yıllık boy uzama hızı sağlıklı ve ideal bir gelişim düzeyindedir (yılda ${boyGrowth} cm). `;
+    } else if (boyGrowth > 0) {
+      evaluation += `yıllık boy uzama hızı dengeli gelişim sınırları içerisindedir (yılda ${boyGrowth} cm). `;
+    } else {
+      evaluation += `boy uzama hızı ve boy gelişimi istikrarlı seyrini sürdürmektedir. `;
+    }
+
+    // 2. Kilo gelişimi
+    if (kiloGrowth > 5) {
+      evaluation += `Kilo artışı (yılda +${kiloGrowth} kg) fiziksel kütle kazanımı açısından belirgindir. `;
+    } else if (kiloGrowth > 0) {
+      evaluation += `Kilo artışı (yılda +${kiloGrowth} kg) boy uzama hızıyla son derece uyumlu ve dengelidir. `;
+    } else {
+      evaluation += `Vücut ağırlığı dengeli gelişim düzeyini korumaktadır. `;
+    }
+
+    // 3. Kulaç / Boy oranı
+    const kRatio = parseFloat(kulacBoyRatio);
+    if (kRatio > 1.02) {
+      evaluation += `Kulaç/boy oranı (${kulacBoyRatio}) basketbol branşı için üst düzey fiziksel avantaj (pozitif ape indeksi) sunmaktadır. `;
+    } else if (kRatio >= 1.00) {
+      evaluation += `Kulaç/boy oranı (${kulacBoyRatio}) basketbol için avantajlı bir fiziksel yapıya işaret etmektedir. `;
+    } else {
+      evaluation += `Kulaç/boy oranı (${kulacBoyRatio}) dengeli ve standart gelişim sınırları içerisindedir. `;
+    }
+
+    // 4. Bacak / Boy oranı
+    const bRatio = parseFloat(bacakBoyRatio);
+    if (bRatio > 0.60) {
+      evaluation += `Bacak/boy oranı (${bacakBoyRatio}) yüksek alt ekstremite uzunluğunu göstermekte olup atletik performansı ve hareket genişliğini desteklemektedir. `;
+    } else {
+      evaluation += `Bacak/boy oranı (${bacakBoyRatio}) dengeli vücut mekaniği ve hareket koordinasyonu sunmaktadır. `;
+    }
+
+    // 5. General recommendation
+    evaluation += `Düzenli antrenman ve gelişim takibi ile sporcunun mevcut fiziksel potansiyelini en üst düzeye çıkarması desteklenecektir.`;
+
+    return evaluation;
+  };
+
   // Separate strong directions (🟢) and areas to improve (🟡 or 🔴)
   const strongPoints = playerSkills.filter(s => s.status?.includes('🟢')).map(s => s.name);
   const improvementAreas = playerSkills.filter(s => s.status?.includes('🟡') || s.status?.includes('🔴')).map(s => s.name);
@@ -1509,8 +1573,8 @@ export default function Reports() {
 
 
                 <div className="report-section-label">Bilimsel Değerlendirme</div>
-                <div className="report-box" style={{ fontSize: 9.5, color: '#94a3b8', lineHeight: 1.55 }}>
-                  Çınar'ın boy uzaması hızı, kilo artışı ve vücut oranları yaşlarına göre ideal aralıktadır. Özellikle bacak uzunluğu ve kulaç uzunluğu izlenmelidir. Düzenli antrenman ile fiziksel gelişimi olumlu sürecektir.
+                <div className="report-box" style={{ fontSize: 9.5, color: '#cbd5e1', lineHeight: 1.55 }}>
+                  {generateScientificEvaluation()}
                 </div>
                 <div className="report-pnum">03</div>
               </div>
