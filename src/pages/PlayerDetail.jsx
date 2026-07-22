@@ -13,16 +13,9 @@ const getDisplayChange = (m) => {
   if (m.change && m.change !== '—' && m.change !== '-') {
     return m.change;
   }
-  const commentLower = (m.comment || '').toLowerCase();
-  if (commentLower.includes('hata') || commentLower.includes('referans') || commentLower.includes('suphe')) {
-    return '—';
-  }
   if (!m.val2025 || !m.val2026) return '—';
   const str25 = m.val2025.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
   const str26 = m.val2026.toString().replace(/[^\d.,-]/g, '').replace(',', '.');
-  if (m.val2025.toString().includes('*') || m.val2026.toString().includes('*')) {
-    return '—';
-  }
   const v25 = parseFloat(str25);
   const v26 = parseFloat(str26);
   if (isNaN(v25) || isNaN(v26)) return '—';
