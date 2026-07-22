@@ -7,58 +7,73 @@ import {
 import * as XLSX from 'xlsx';
 import { isSupabaseConfigured, supabase, localDb } from '../lib/supabase';
 
-const CHATGPT_PROMPT_TEMPLATE = `Aşağıdaki ham sporcu listesini/verilerini analiz et ve belirtilen JSON şemasına uygun, geçerli bir JSON dizisi (Array) olarak çıktı ver. Çıktı sadece geçerli bir JSON kodu olmalı, başka hiçbir açıklama veya metin içermemelidir.
+const CHATGPT_PROMPT_TEMPLATE = `Sen bir basketbol antrenörüne yardım eden uzman bir spor analisti asistanısın. Aşağıda bir antrenörün serbest metin olarak yazdığı sporcu gözlemleri, notlar ve bilgiler yer almaktadır. Bu bilgileri analiz ederek belirtilen JSON formatında çıktı üret.
 
-JSON Şeması:
+ÇIKTI KURALLARI:
+- Sadece geçerli JSON kodu döndür, başka hiçbir metin ekleme.
+- Türkçe karakter kullan (ş, ğ, ü, ö, ı, ç).
+- Yalnızca ham verilerde/notlarda bulunan veya bunlardan doğrudan türetilen bilgileri kullan.
+
+JSON FORMATI:
 [
   {
-    "fullName": "Sporcu Ad Soyad",
-    "birthDate": "Doğum tarihi GG.AA.YYYY formatında",
+    "fullName": "AD SOYAD (büyük harfli)",
+    "birthDate": "GG.AA.YYYY",
     "jerseyNumber": 10,
-    "category": "U9/U10" veya "U11" veya "U12" veya "U14" (Metinde yoksa yaşa veya doğum yılına göre tahmin et),
-    "position": "1 – Oyun Kurucu", "2 – Şutör Guard", "3 – Kısa Forvet", "4 – Uzun Forvet", "5 – Pivot" değerlerinden biri (Yoksa boyuna veya kategorisine göre en uygun olanı ata),
-    "dominantHand": "right" veya "left" (Belirtilmemişse varsayılan olarak "right" ata),
-    "fatherHeight": "Baba boyu örn: 182 cm" (Belirtilmemişse Türkiye ortalaması olan "178 cm" ata),
-    "motherHeight": "Anne boyu örn: 170 cm" (Belirtilmemişse Türkiye ortalaması olan "165 cm" ata),
-    "allergy": "Alerji durumu, yoksa 'Yok'",
-    "geneticNote": "Genetik ve fiziksel potansiyel hakkında yorum (Yoksa anne/baba boyuna göre büyüme potansiyeli yorumu yaz)",
+    "category": "U9/U10 veya U11 veya U12 veya U14 (yaşa göre belirle)",
+    "position": "1 – Oyun Kurucu veya 2 – Şutör Guard veya 3 – Kısa Forvet veya 4 – Uzun Forvet veya 5 – Pivot",
+    "dominantHand": "right veya left",
+    "fatherHeight": "182 cm",
+    "motherHeight": "165 cm",
+    "allergy": "Yok veya belirtilen alerji",
+    "geneticNote": "Anne/baba boyuna ve fiziksel yapıya göre büyüme potansiyeli değerlendirmesi",
     "antropometri": {
-      "Boy": { "val2025": 133, "val2026": 135, "comment": "Normal gelişim" },
-      "Kilo": { "val2025": 27, "val2026": 30, "comment": "Boy ile uyumlu" },
-      "Kulaç": { "val2025": 135, "val2026": 139, "comment": "Normal" },
-      "Bel": { "val2025": 62, "val2026": 65, "comment": "Normal" },
-      "Omuz": { "val2025": 33, "val2026": 35, "comment": "Normal" },
-      "Bacak": { "val2025": 78, "val2026": 82, "comment": "Normal" }
+      "Boy":   { "val2025": 0, "val2026": 0, "comment": "Gelişim yorumu" },
+      "Kilo":  { "val2025": 0, "val2026": 0, "comment": "Gelişim yorumu" }
     },
     "skills": [
-      { "type": "teknik", "name": "Sol El Gelişimi", "status": "🟢" veya "🟡" veya "🔴", "analysis": "Açıklama" },
-      { "type": "taktik", "name": "Yardım Savunması", "status": "🟢" veya "🟡" veya "🔴", "analysis": "Açıklama" }
+      {
+        "type": "teknik",
+        "name": "SPORCUYA ÖZGÜ teknik beceri adı",
+        "status": "🟢 veya 🟡 veya 🔴",
+        "analysis": "Bu sporcunun bu becerideki durumunu açıklayan 1-2 cümle"
+      },
+      {
+        "type": "taktik",
+        "name": "SPORCUYA ÖZGÜ taktik/mental beceri adı",
+        "status": "🟢 veya 🟡 veya 🔴",
+        "analysis": "Bu sporcunun bu alandaki durumunu açıklayan 1-2 cümle"
+      }
     ],
     "coachReport": {
-      "Genel Sezon Değerlendirmesi": "Koç genel değerlendirme metni",
-      "Teknik ve Oyun Kimliği": "Teknik beceriler yorumu",
-      "Liderlik ve Takım Kültürü": "Karakter yorumu",
-      "Mental Profil": "Zihinsel durum yorumu",
-      "Gelecek Sezon Beklentisi": "Hedefler yorumu"
+      "Genel Sezon Değerlendirmesi": "Sporcunun sezon genelindeki performans özeti",
+      "Teknik ve Oyun Kimliği": "Teknik güçlü/zayıf yanlar ve oyun stili"
     },
     "goals": [
-      { "category": "Teknik" veya "Taktik" veya "Fiziksel" veya "Zihinsel", "title": "Hedef başlığı" }
+      { "category": "Teknik veya Taktik veya Fiziksel veya Zihinsel", "title": "Spesifik hedef açıklaması" }
     ]
   }
 ]
 
-⚠️ ÖNEMLİ EKSİK VERİ DOLDURMA KURALLARI:
-Eğer ham verilerde bazı bilgiler eksikse, kesinlikle boş ("") veya null bırakma. Aşağıdaki kurallara göre akıllı tahminler yaparak doldur:
-1. **birthDate**: Eksikse, yaş veya kategori bilgisine göre tahmini bir yıl seç ve '01.01.YYYY' formatında ata.
-2. **jerseyNumber**: Eksikse 1-99 arası rastgele boşta olabilecek bir numara ata.
-3. **antropometri (Boy, Kilo, vb.)**: Eksikse çocuğun yaşına/kategorisine göre standart gelişim değerlerini baz alarak tahmin et.
-4. **skills**: MUTLAKA şu becerileri dahil et ve 'analysis' (detaylı analiz) kısımlarını çocuğun profiline göre doldur:
-   - Teknik: "Sol El Gelişimi", "Sağ El Bitirişleri", "Şut Mekaniği", "Top Advance", "Skip & Go", "Ball Handling", "Akselerasyon/Deselerasyon"
-   - Taktik/Mental: "Basketbol IQ", "Yardım Savunması", "Liderlik", "Mücadele Gücü", "Temaslı Oyun", "Savunma Kimliği"
-5. **coachReport**: Alanları boş bırakma, sporcunun profiline ve pozisyonuna uygun profesyonel koç diliyle değerlendirme cümleleri üret.
+⚠️ KRİTİK KURALLAR:
 
-Dönüştürülecek Ham Sporcu Verileri:
-[Buraya verilerinizi yapıştırın]`;
+1. **skills — KESİNLİKLE YALNIZCA HAM VERİLERDE BULUNAN BECERİLERİ DAHİL ET**:
+   Dosyada/notta bulunmayan veya ham verilerde geçmeyen zorunlu/sabit becerileri (örn. "Skip & Go", "Ball Handling" vb.) EKLEME VEYA TAHMİN ETME!
+   Sadece ham verilerde açıkça belirtilen veya antrenörün doğrudan değerlendirdiği becerileri dahil et.
+
+2. **antropometri — DİNAMİK ÖLÇÜMLER**:
+   Ham verilerde geçen tüm ölçümleri (Boy, Kilo, Kulaç, Bel, Omuz, Bacak ve varsa Dikey Sıçrama, Depar vb. özel ölçümleri) ekle.
+
+3. **coachReport — DİNAMİK ANTRENÖR RAPORU**:
+   Antrenörün notlarındaki tüm özel konuları/başlıkları dinamik olarak başlık-açıklama ikilisi şeklinde ekle.
+
+4. **goals**: Yalnızca ham verilerde geçen gelişim ihtiyaçlarına uygun hedefleri ekle.
+
+---
+ANTRENÖR NOTLARI:
+(Aşağıya sporcu bilgilerini serbest metin olarak yazın. Format fark etmez — WhatsApp notu, kayıt formu, antrenman gözlemi olabilir.)
+---`;
+
 
 function parseExcelFile(file) {
   return new Promise((resolve, reject) => {
@@ -112,16 +127,48 @@ function analyzeParsedData(sheets) {
 
   const teknikSheet = sheets['3-Teknik_Analiz'] || [];
   const teknikSkills = [];
-  for (let i = 1; i < teknikSheet.length; i++) {
-    const row = teknikSheet[i];
-    if (row && row[0]) teknikSkills.push({ name: row[0], status: row[1], analysis: row[2] });
+  if (teknikSheet.length > 0) {
+    // Sütun başlığına bakarak doğru index'i bul ("Durum" veya "Seviye" her ikisi de çalışır)
+    const teknikHeader = teknikSheet[0] || [];
+    const teknikStatusIdx = teknikHeader.findIndex(h =>
+      /durum|seviye|status|level/i.test(h?.toString() || '')
+    );
+    const teknikAnalysisIdx = teknikHeader.findIndex(h =>
+      /analiz|değerlendirme|yorum|analysis/i.test(h?.toString() || '')
+    );
+    for (let i = 1; i < teknikSheet.length; i++) {
+      const row = teknikSheet[i];
+      if (row && row[0]) {
+        teknikSkills.push({
+          name: row[0],
+          status: teknikStatusIdx >= 0 ? row[teknikStatusIdx] : row[1],
+          analysis: teknikAnalysisIdx >= 0 ? row[teknikAnalysisIdx] : row[2]
+        });
+      }
+    }
   }
 
   const taktikSheet = sheets['4-Taktik_Mental_Fiziksel'] || sheets['4-Taktik_Mental'] || [];
   const taktikSkills = [];
-  for (let i = 1; i < taktikSheet.length; i++) {
-    const row = taktikSheet[i];
-    if (row && row[0]) taktikSkills.push({ name: row[0], status: row[1], analysis: row[2] });
+  if (taktikSheet.length > 0) {
+    // Sütun başlığına bakarak doğru index'i bul
+    const taktikHeader = taktikSheet[0] || [];
+    const taktikStatusIdx = taktikHeader.findIndex(h =>
+      /durum|seviye|status|level/i.test(h?.toString() || '')
+    );
+    const taktikAnalysisIdx = taktikHeader.findIndex(h =>
+      /analiz|değerlendirme|yorum|analysis/i.test(h?.toString() || '')
+    );
+    for (let i = 1; i < taktikSheet.length; i++) {
+      const row = taktikSheet[i];
+      if (row && row[0]) {
+        taktikSkills.push({
+          name: row[0],
+          status: taktikStatusIdx >= 0 ? row[taktikStatusIdx] : row[1],
+          analysis: taktikAnalysisIdx >= 0 ? row[taktikAnalysisIdx] : row[2]
+        });
+      }
+    }
   }
 
   const coachSheet = sheets['5-Coach_Report'] || [];
@@ -225,19 +272,8 @@ function sanitizeAndHydrate(player) {
     });
   }
 
-  const defaultTeknik = ['Sol El Gelişimi', 'Sağ El Bitirişleri', 'Şut Mekaniği', 'Top Advance', 'Skip & Go', 'Ball Handling', 'Akselerasyon/Deselerasyon'];
-  defaultTeknik.forEach(name => {
-    if (!teknikSkills.some(s => s.name?.toLowerCase() === name.toLowerCase())) {
-      teknikSkills.push({ name, status: '🟡', analysis: '' });
-    }
-  });
-
-  const defaultTaktik = ['Basketbol IQ', 'Yardım Savunması', 'Liderlik', 'Mücadele Gücü', 'Temaslı Oyun', 'Savunma Kimliği'];
-  defaultTaktik.forEach(name => {
-    if (!taktikSkills.some(s => s.name?.toLowerCase() === name.toLowerCase())) {
-      taktikSkills.push({ name, status: '🟢', analysis: '' });
-    }
-  });
+  // Her sporcunun becerileri kendine özgüdür — varsayılan liste eklenmez.
+  // GPT veya Excel'den gelen beceriler olduğu gibi kaydedilir.
 
   // Coach Report
   const coachReport = player.coachReport || player.coach_reports || {
@@ -799,7 +835,7 @@ export default function ExcelImport() {
             <span>🧠</span> ChatGPT ile Hızlı Aktarma Sihirbazı
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--c-text-2)', lineHeight: 1.6, marginBottom: 20 }}>
-            WhatsApp grupları, el yazısı notları veya diğer karışık metin listelerini ChatGPT yardımıyla sisteme sıfır eforla toplu aktarın.
+            WhatsApp notları, kayıt formu, antrenman gözlemleri — ne elde varsa yapıştırın. ChatGPT her sporcunun güçlü/zayıf yönlerine göre <strong>kendine özgü beceri başlıkları</strong> oluşturur ve sisteme aktarır.
           </p>
 
           {/* Step 1 */}
@@ -809,7 +845,7 @@ export default function ExcelImport() {
               Aşağıdaki Talimat Şablonunu Kopyalayın
             </h4>
             <p style={{ fontSize: '0.75rem', color: 'var(--c-text-3)', marginBottom: 8 }}>
-              Bu promptu kopyalayıp ChatGPT'ye yapıştırın ve altına elinizdeki düz metin listeyi ekleyerek gönderin.
+              Bu promptu kopyalayıp <strong>ChatGPT</strong>'ye yapıştırın. Ardından sporcuların bilgilerini ve antrenman notlarınızı altına serbest metin olarak ekleyip gönderin. Format önemli değil.
             </p>
             <div style={{ position: 'relative' }}>
               <button
@@ -858,7 +894,7 @@ export default function ExcelImport() {
               ChatGPT Çıktısını Buraya Yapıştırın ve Aktarın
             </h4>
             <p style={{ fontSize: '0.75rem', color: 'var(--c-text-3)', marginBottom: 8 }}>
-              ChatGPT'nin size verdiği JSON kodunu kopyalayıp aşağıdaki alana yapıştırın.
+              ChatGPT'nin size verdiği JSON kodunu kopyalayıp aşağıdaki alana yapıştırın. Her sporcu için benzersiz beceri başlıkları otomatik sisteme aktarılır.
             </p>
             <textarea
               value={gptJson}

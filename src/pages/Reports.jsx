@@ -30,13 +30,10 @@ export default function Reports() {
   const selectedPlayer = players.find(p => p.id?.toString() === effectivePlayerId);
 
   // Load player-specific Excel data
-  // Load player-specific Excel data - Always ensure all 6 default metrics are present and in order
+  // Load player-specific Excel data - Preserve all custom metrics if available
   const rawAntro = (db.antropometri || []).filter(m => m.playerId?.toString() === effectivePlayerId);
   const defaultMetrics = ['Boy', 'Kilo', 'Kulaç', 'Bel', 'Omuz', 'Bacak'];
-  const playerAntro = defaultMetrics.map(metricName => {
-    const existing = rawAntro.find(m => m.metric?.toLowerCase() === metricName.toLowerCase());
-    return existing ? { ...existing } : { metric: metricName, val2025: '—', val2026: '—', change: '—', comment: '' };
-  });
+  const playerAntro = rawAntro.length > 0 ? rawAntro : defaultMetrics.map(metricName => ({ metric: metricName, val2025: '—', val2026: '—', change: '—', comment: '' }));
   const playerSkills = (db.skills || []).filter(s => (s.playerId || s.player_id)?.toString() === effectivePlayerId);
   const playerGenetics = (db.genetics || []).find(g => (g.playerId || g.player_id)?.toString() === effectivePlayerId);
   const playerCoachReport = (db.coach_reports || []).find(r => (r.playerId || r.player_id)?.toString() === effectivePlayerId);

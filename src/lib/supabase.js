@@ -80,10 +80,8 @@ export async function syncFromSupabase() {
       db.profiles = profiles
         .filter(p => {
           const pId = p.id?.toString();
-          const pName = normalizeName(p.full_name || p.fullName || '');
           const isIdDeleted = deletedIds.includes(pId);
-          const isNameDeleted = pName && deletedNames.includes(pName);
-          return !isIdDeleted && !isNameDeleted && p.status !== 'deleted';
+          return !isIdDeleted && p.status !== 'deleted';
         })
         .map(p => {
           const local = existingProfiles.find(lp => lp.id?.toString() === p.id?.toString()) || {};
@@ -322,23 +320,13 @@ export const localDb = {
   get: () => JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}'),
   getDeletedIds: () => JSON.parse(localStorage.getItem('baskettrack_deleted_ids') || '[]'),
   getDeletedNames: () => JSON.parse(localStorage.getItem('baskettrack_deleted_names') || '[]'),
-  markDeleted: (id, fullName) => {
+  markDeleted: (id) => {
     if (id) {
       const strId = id.toString();
       const ids = JSON.parse(localStorage.getItem('baskettrack_deleted_ids') || '[]');
       if (!ids.includes(strId)) {
         ids.push(strId);
         localStorage.setItem('baskettrack_deleted_ids', JSON.stringify(ids));
-      }
-    }
-    if (fullName) {
-      const normName = normalizeName(fullName);
-      if (normName) {
-        const names = JSON.parse(localStorage.getItem('baskettrack_deleted_names') || '[]');
-        if (!names.includes(normName)) {
-          names.push(normName);
-          localStorage.setItem('baskettrack_deleted_names', JSON.stringify(names));
-        }
       }
     }
   },

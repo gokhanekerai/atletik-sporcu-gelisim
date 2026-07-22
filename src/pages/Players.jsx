@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Filter, Plus, ChevronRight, X, Trash2, Save, Sparkles } from 'lucide-react';
+import { Search, Filter, Plus, ChevronRight, X, Trash2, Save, Sparkles, CheckSquare } from 'lucide-react';
 import { localDb, supabase, isSupabaseConfigured, normalizeName } from '../lib/supabase';
 
 const initials = name => name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '?';
@@ -26,10 +26,17 @@ export default function Players() {
     };
   }, []);
   
-  // Modal State
+  // Modal & Selection State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  
+  // Multi-Select Mode States
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]); // Stores string IDs only!
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const [newPlayer, setNewPlayer] = useState({
     fullName: '',
     email: '',
@@ -53,6 +60,26 @@ export default function Players() {
     return matchName && matchCat && matchPos && matchStatus && p.role !== 'admin' && p.role !== 'super_admin';
   });
 
+  // Toggle selection for a single player (ensuring strict string ID handling)
+  const toggleSelectPlayer = (id) => {
+    const strId = id?.toString();
+    if (!strId) return;
+    setSelectedIds(prev => 
+      prev.includes(strId) ? prev.filter(i => i !== strId) : [...prev, strId]
+    );
+  };
+
+  // Toggle selection for all currently filtered players
+  const toggleSelectAll = () => {
+    const allFilteredIds = filtered.map(p => p.id?.toString()).filter(Boolean);
+    const allSelected = allFilteredIds.every(id => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(allFilteredIds);
+    }
+  };
+
   const getAge = (birthDate) => {
     if (!birthDate) return '—';
     const birthYear = parseInt(birthDate.split('.')[2]);
@@ -60,7 +87,7 @@ export default function Players() {
     return new Date().getFullYear() - birthYear;
   };
 
-  // Add new player manually
+  // Add new player manually (STRICT DUPLICATE CHECK)
   const handleAddPlayer = (e) => {
     e.preventDefault();
     if (!newPlayer.fullName || !newPlayer.email || !newPlayer.password) {
@@ -71,18 +98,13 @@ export default function Players() {
     const currentDb = localDb.get();
     const existingPlayers = currentDb.profiles || [];
 
-    // Duplicate name check
+    // Duplicate name check: STRICT BLOCKING
     const normalizedInputName = normalizeName(newPlayer.fullName);
     const existingMatch = existingPlayers.find(p => normalizeName(p.fullName) === normalizedInputName);
 
     if (existingMatch) {
-      const confirmAdd = window.confirm(
-        `⚠️ UYARI: "${newPlayer.fullName}" isminde bir sporcu sistemde zaten kayıtlı!\n\nYine de aynı isim ve soyisimle yeni bir sporcu eklemek istediğinizden emin misiniz?`
-      );
-      if (!confirmAdd) {
-        return; // Kullanıcı onaylamadı -> Sporcu eklenmesin!
-      }
-      localDb.unmarkDeleted(newPlayer.fullName);
+      alert(`⚠️ HATA: "${newPlayer.fullName}" isminde bir sporcu sistemde zaten kayıtlı!\n\nAynı isimde mükerrer sporcu eklenemez. Lütfen ismi kontrol edin veya ayırt edici bir takı ekleyin.`);
+      return; // Sadece uyarı ver ve iptal et (asla ekleme!)
     }
 
     const newId = `player_${Date.now()}`;
@@ -132,30 +154,6 @@ export default function Players() {
       });
     });
 
-    // Seed default skills matching Excel structure
-    if (!currentDb.skills) currentDb.skills = [];
-    const defaultTeknik = ['Sol El Gelişimi', 'Sağ El Bitirişleri', 'Şut Mekaniği', 'Top Advance', 'Skip & Go', 'Ball Handling', 'Akselerasyon/Deselerasyon'];
-    defaultTeknik.forEach(s => {
-      currentDb.skills.push({
-        playerId: newId,
-        type: 'teknik',
-        name: s,
-        status: '🟡',
-        analysis: ''
-      });
-    });
-
-    const defaultTaktik = ['Basketbol IQ', 'Yardım Savunması', 'Liderlik', 'Mücadele Gücü', 'Temaslı Oyun', 'Savunma Kimliği'];
-    defaultTaktik.forEach(s => {
-      currentDb.skills.push({
-        playerId: newId,
-        type: 'taktik',
-        name: s,
-        status: '🟢',
-        analysis: ''
-      });
-    });
-
     // Seed empty coach report
     if (!currentDb.coach_reports) currentDb.coach_reports = [];
     currentDb.coach_reports.push({
@@ -189,47 +187,33 @@ export default function Players() {
     setIsModalOpen(false);
   };
 
-  // Delete player profiles
+  // Delete player profiles STRICTLY BY UNIQUE ID ONLY
   const handleDeletePlayer = async (playerId) => {
     if (!playerId) return;
     setDeletingId(playerId);
 
     const currentDb = localDb.get();
-    const targetPlayer = (currentDb.profiles || []).find(p => p.id?.toString() === playerId.toString());
     const strId = playerId.toString();
-    const fullName = targetPlayer?.fullName || '';
-    const normName = normalizeName(fullName);
 
-    // Mark player ID and Name as permanently deleted in local registry
-    localDb.markDeleted(strId, fullName);
+    // Mark player ID as permanently deleted in local registry
+    localDb.markDeleted(strId);
 
     if (isSupabaseConfigured) {
       try {
-        // Delete child records first to prevent FK constraint violations
         await supabase.from('antropometri').delete().eq('player_id', strId);
         await supabase.from('skills').delete().eq('player_id', strId);
         await supabase.from('coach_reports').delete().eq('player_id', strId);
         await supabase.from('goals').delete().eq('player_id', strId);
         await supabase.from('genetics').delete().eq('player_id', strId);
         await supabase.from('physical_measurements').delete().eq('player_id', strId);
-
-        // Delete profile and mark status as deleted in cloud
         await supabase.from('profiles').delete().eq('id', strId);
-        if (fullName) {
-          await supabase.from('profiles').delete().eq('full_name', fullName);
-        }
-        await supabase.from('profiles').update({ status: 'deleted' }).eq('id', strId);
       } catch(err) {
-        console.warn('Supabase cloud delete exception (local deletion will persist):', err);
+        console.warn('Supabase cloud delete exception:', err);
       }
     }
 
-    // Clean all entries related to playerId or fullName
-    currentDb.profiles = (currentDb.profiles || []).filter(p => {
-      const pIdMatch = p.id?.toString() === strId;
-      const pNameMatch = normName && normalizeName(p.fullName) === normName;
-      return !pIdMatch && !pNameMatch;
-    });
+    // Clean ONLY entries matching this specific playerId (never match by fullName!)
+    currentDb.profiles = (currentDb.profiles || []).filter(p => p.id?.toString() !== strId);
     currentDb.genetics = (currentDb.genetics || []).filter(g => g.playerId?.toString() !== strId);
     currentDb.antropometri = (currentDb.antropometri || []).filter(m => m.playerId?.toString() !== strId);
     currentDb.skills = (currentDb.skills || []).filter(s => s.playerId?.toString() !== strId);
@@ -241,6 +225,48 @@ export default function Players() {
     setDb(currentDb);
     setDeletingId(null);
     setConfirmDeleteId(null);
+    setSelectedIds(prev => prev.filter(id => id?.toString() !== strId));
+    window.dispatchEvent(new Event('auth-changed'));
+  };
+
+  // Bulk Delete Multiple Players STRICTLY BY ID
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setIsBulkDeleting(true);
+
+    const currentDb = localDb.get();
+    const stringIds = selectedIds.map(id => id.toString());
+
+    for (const strId of stringIds) {
+      localDb.markDeleted(strId);
+      if (isSupabaseConfigured) {
+        try {
+          await supabase.from('antropometri').delete().eq('player_id', strId);
+          await supabase.from('skills').delete().eq('player_id', strId);
+          await supabase.from('coach_reports').delete().eq('player_id', strId);
+          await supabase.from('goals').delete().eq('player_id', strId);
+          await supabase.from('genetics').delete().eq('player_id', strId);
+          await supabase.from('physical_measurements').delete().eq('player_id', strId);
+          await supabase.from('profiles').delete().eq('id', strId);
+        } catch(err) {
+          console.warn('Supabase bulk delete exception:', err);
+        }
+      }
+    }
+
+    currentDb.profiles = (currentDb.profiles || []).filter(p => !stringIds.includes(p.id?.toString()));
+    currentDb.genetics = (currentDb.genetics || []).filter(g => !stringIds.includes(g.playerId?.toString()));
+    currentDb.antropometri = (currentDb.antropometri || []).filter(m => !stringIds.includes(m.playerId?.toString()));
+    currentDb.skills = (currentDb.skills || []).filter(s => !stringIds.includes(s.playerId?.toString()));
+    currentDb.coach_reports = (currentDb.coach_reports || []).filter(r => !stringIds.includes(r.playerId?.toString()));
+    currentDb.goals = (currentDb.goals || []).filter(g => !stringIds.includes(g.playerId?.toString()));
+    currentDb.physicalMeasurements = (currentDb.physicalMeasurements || []).filter(m => !stringIds.includes(m.playerId?.toString()));
+
+    localDb.set(currentDb);
+    setDb(currentDb);
+    setSelectedIds([]);
+    setConfirmBulkDelete(false);
+    setIsBulkDeleting(false);
     window.dispatchEvent(new Event('auth-changed'));
   };
 
@@ -252,7 +278,26 @@ export default function Players() {
           <h1>Sporcular</h1>
           <p>{filtered.length} sporcu listelendi (Excel veri tabanlı)</p>
         </div>
-        <div className="page-header-actions" style={{ display: 'flex', gap: 10 }}>
+        <div className="page-header-actions" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {selectedIds.length > 0 && (
+            <button 
+              className="btn btn-sm" 
+              onClick={() => setConfirmBulkDelete(true)}
+              style={{ background: 'var(--c-red)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}
+            >
+              <Trash2 size={16} /> Seçilenleri Sil ({selectedIds.length})
+            </button>
+          )}
+          <button 
+            className={`btn ${isSelectMode ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => {
+              setIsSelectMode(!isSelectMode);
+              if (isSelectMode) setSelectedIds([]);
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <CheckSquare size={16} /> {isSelectMode ? 'Seçimi Kapat' : 'Çoklu Seç'}
+          </button>
           <button className="btn btn-secondary" onClick={() => navigate('/excel-import', { state: { tab: 'gpt' } })} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Sparkles size={16} style={{ color: 'var(--c-primary)' }} /> ChatGPT ile Hızlı Aktar
           </button>
@@ -262,9 +307,9 @@ export default function Players() {
         </div>
       </div>
 
-      {/* FILTER BAR */}
-      <div className="filters-bar">
-        <div style={{ position: 'relative', flex: 1, maxWidth: 280 }}>
+      {/* FILTER BAR & SELECT ALL TOGGLE */}
+      <div className="filters-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 280 }}>
           <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--c-text-3)', pointerEvents: 'none' }} />
           <input
             type="text"
@@ -301,6 +346,25 @@ export default function Players() {
           <option value="injured">Sakat</option>
           <option value="inactive">Pasif</option>
         </select>
+
+        {filtered.length > 0 && (isSelectMode || selectedIds.length > 0) && (
+          <div 
+            onClick={toggleSelectAll}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', background: 'var(--c-surface-3)', padding: '6px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--c-primary)', cursor: 'pointer' }}
+          >
+            <input 
+              type="checkbox"
+              id="select-all-checkbox"
+              checked={filtered.length > 0 && filtered.every(p => selectedIds.includes(p.id?.toString()))}
+              onChange={toggleSelectAll}
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+            <label htmlFor="select-all-checkbox" style={{ fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', color: 'var(--c-primary)' }}>
+              Tümünü Seç ({filtered.length})
+            </label>
+          </div>
+        )}
       </div>
 
       {/* PLAYERS LIST */}
@@ -312,20 +376,52 @@ export default function Players() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {filtered.map(player => {
+            const strId = player.id?.toString();
             const age = getAge(player.birthDate);
+            const isSelected = selectedIds.includes(strId);
             
             // Excel data counters
-            const antroCount = (db.antropometri || []).filter(m => m.playerId?.toString() === player.id?.toString()).length;
-            const skillsCount = (db.skills || []).filter(s => s.playerId?.toString() === player.id?.toString()).length;
-            const goalsCount = (db.goals || []).filter(g => g.playerId?.toString() === player.id?.toString()).length;
+            const antroCount = (db.antropometri || []).filter(m => m.playerId?.toString() === strId).length;
+            const skillsCount = (db.skills || []).filter(s => s.playerId?.toString() === strId).length;
+            const goalsCount = (db.goals || []).filter(g => g.playerId?.toString() === strId).length;
 
             return (
               <div
                 key={player.id}
                 className="player-card"
-                onClick={() => navigate(`/players/${player.id}`)}
-                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  if (isSelectMode) {
+                    toggleSelectPlayer(player.id);
+                  } else {
+                    navigate(`/players/${player.id}`);
+                  }
+                }}
+                style={{ 
+                  cursor: 'pointer',
+                  border: isSelected ? '1px solid var(--c-primary)' : undefined,
+                  background: isSelected ? 'rgba(255, 107, 53, 0.08)' : undefined 
+                }}
               >
+                {/* Selection Checkbox */}
+                {isSelectMode && (
+                  <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    style={{ display: 'flex', alignItems: 'center', paddingRight: 10, cursor: 'pointer' }}
+                  >
+                    <input 
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelectPlayer(player.id)}
+                      style={{ 
+                        width: 20, 
+                        height: 20, 
+                        cursor: 'pointer',
+                        accentColor: 'var(--c-primary)'
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* Jersey Number */}
                 <div style={{
                   width: 36, textAlign: 'center',
@@ -377,9 +473,10 @@ export default function Players() {
                   </div>
                 </div>
 
-                {/* Actions */}
+                {/* Single Delete Action */}
                 <button 
                   className="btn btn-ghost btn-sm" 
+                  title="Bu sporcuyu sil"
                   onClick={(e) => {
                     e.stopPropagation();
                     setConfirmDeleteId(player.id);
@@ -398,6 +495,34 @@ export default function Players() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* CONFIRM BULK DELETE MODAL */}
+      {confirmBulkDelete && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'var(--c-bg)', padding: 'var(--space-4)', borderRadius: 'var(--radius-lg)',
+            width: '90%', maxWidth: 420, boxShadow: 'var(--shadow-lg)'
+          }}>
+            <h3 style={{ marginTop: 0, color: 'var(--c-red)' }}>Çoklu Sporcu Silme</h3>
+            <p>Seçilen <strong>{selectedIds.length} adet sporcuyu</strong> ve bu sporcularla ilgili tüm verileri kalıcı olarak silmek istediğinize emin misiniz?</p>
+            <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)', justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost" disabled={isBulkDeleting} onClick={() => setConfirmBulkDelete(false)}>İptal</button>
+              <button 
+                className="btn btn-primary" 
+                disabled={isBulkDeleting}
+                style={{ background: 'var(--c-red)', borderColor: 'var(--c-red)' }} 
+                onClick={handleBulkDelete}
+              >
+                {isBulkDeleting ? 'Siliniyor...' : `Evet, ${selectedIds.length} Sporcuyu Sil`}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

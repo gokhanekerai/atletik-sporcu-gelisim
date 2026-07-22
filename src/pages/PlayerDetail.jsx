@@ -107,14 +107,14 @@ export default function PlayerDetail() {
       note: genetics?.note || ''
     });
 
-    // Antropometri - Always ensure all 6 default metrics are present and in order
+    // Antropometri - Load player's measurements (preserve all existing & custom metrics)
     const antro = (freshDb.antropometri || []).filter(m => m.playerId?.toString() === effectivePlayerId);
-    const defaultMetrics = ['Boy', 'Kilo', 'Kulaç', 'Bel', 'Omuz', 'Bacak'];
-    const mergedAntro = defaultMetrics.map(metricName => {
-      const existing = antro.find(m => m.metric?.toLowerCase() === metricName.toLowerCase());
-      return existing ? { ...existing } : { metric: metricName, val2025: '', val2026: '', change: '', comment: '' };
-    });
-    setAntroForm(mergedAntro);
+    if (antro.length > 0) {
+      setAntroForm(antro);
+    } else {
+      const defaultMetrics = ['Boy', 'Kilo', 'Kulaç', 'Bel', 'Omuz', 'Bacak'];
+      setAntroForm(defaultMetrics.map(metricName => ({ metric: metricName, val2025: '', val2026: '', change: '', comment: '' })));
+    }
 
     // Skills
     const skills = (freshDb.skills || []).filter(s => s.playerId?.toString() === effectivePlayerId);
