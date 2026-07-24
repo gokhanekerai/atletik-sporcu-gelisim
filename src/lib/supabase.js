@@ -72,11 +72,71 @@ export const generateEmailFromName = (name) => {
   return `${normalizeName(name)}@atletik.com`;
 };
 
+export const cleanDuplicates = (db) => {
+  if (!db) return db;
+
+  if (Array.isArray(db.coach_reports)) {
+    const map = new Map();
+    db.coach_reports.forEach(r => {
+      if (r && (r.playerId || r.player_id)) {
+        map.set((r.playerId || r.player_id).toString(), r);
+      }
+    });
+    db.coach_reports = Array.from(map.values());
+  }
+
+  if (Array.isArray(db.goals)) {
+    const seen = new Set();
+    db.goals = db.goals.filter(g => {
+      if (!g || !g.playerId) return false;
+      const key = `${g.playerId}_${g.category}_${g.title}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  if (Array.isArray(db.physicalMeasurements)) {
+    const seen = new Set();
+    db.physicalMeasurements = db.physicalMeasurements.filter(pm => {
+      if (!pm || !pm.playerId) return false;
+      const key = `${pm.playerId}_${pm.date}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  if (Array.isArray(db.antropometri)) {
+    const seen = new Set();
+    db.antropometri = db.antropometri.filter(a => {
+      if (!a || !a.playerId) return false;
+      const key = `${a.playerId}_${a.metric}_${a.date}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  if (Array.isArray(db.skills)) {
+    const seen = new Set();
+    db.skills = db.skills.filter(s => {
+      if (!s || !s.playerId) return false;
+      const key = `${s.playerId}_${s.type}_${s.name}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  return db;
+};
+
 export async function syncFromSupabase() {
   if (!isSupabaseConfigured) return;
   console.log('Syncing database from Supabase cloud...');
   try {
-    const db = localDb.get();
+    const db = cleanDuplicates(localDb.get());
     const deletedIds = localDb.getDeletedIds();
     const deletedNames = localDb.getDeletedNames();
     
@@ -128,84 +188,125 @@ export async function syncFromSupabase() {
         }));
     }
 
-    // 3. Fetch antropometri
+    // 3. Fetch antropometri (Deduplicate by playerId, metric, date)
     const { data: antropometri, error: aError } = await supabase.from('antropometri').select('*');
     if (!aError && antropometri) {
-      db.antropometri = antropometri
+      const seenAntroKeys = new Set();
+      const cleanAntro = [];
+      antropometri
         .filter(a => !deletedIds.includes(a.player_id?.toString()))
-        .map(a => ({
-          _id: a.id,
-          playerId: a.player_id,
-          date: a.date,
-          metric: a.metric,
-          val2025: a.val_2025,
-          val2026: a.val_2026,
-          change: a.change_val,
-          comment: a.comment
-        }));
+        .forEach(a => {
+          const key = `${a.player_id}_${a.metric}_${a.date}`;
+          if (!seenAntroKeys.has(key)) {
+            seenAntroKeys.add(key);
+            cleanAntro.push({
+              _id: a.id,
+              playerId: a.player_id,
+              date: a.date,
+              metric: a.metric,
+              val2025: a.val_2025,
+              val2026: a.val_2026,
+              change: a.change_val,
+              comment: a.comment
+            });
+          }
+        });
+      db.antropometri = cleanAntro;
     }
 
-    // 4. Fetch skills
+    // 4. Fetch skills (Deduplicate by playerId, type, name)
     const { data: skills, error: sError } = await supabase.from('skills').select('*');
     if (!sError && skills) {
-      db.skills = skills
+      const seenSkillKeys = new Set();
+      const cleanSkills = [];
+      skills
         .filter(s => !deletedIds.includes(s.player_id?.toString()))
-        .map(s => ({
-          _id: s.id,
-          playerId: s.player_id,
-          name: s.name,
-          type: s.type,
-          status: s.rating,
-          analysis: s.analysis
-        }));
+        .forEach(s => {
+          const key = `${s.player_id}_${s.type}_${s.name}`;
+          if (!seenSkillKeys.has(key)) {
+            seenSkillKeys.add(key);
+            cleanSkills.push({
+              _id: s.id,
+              playerId: s.player_id,
+              name: s.name,
+              type: s.type,
+              status: s.rating,
+              analysis: s.analysis
+            });
+          }
+        });
+      db.skills = cleanSkills;
     }
 
-    // 5. Fetch coach reports
+    // 5. Fetch coach reports (Deduplicate by playerId - keep latest)
     const { data: coachReports, error: cError } = await supabase.from('coach_reports').select('*');
     if (!cError && coachReports) {
-      db.coach_reports = coachReports
+      const latestReportsMap = new Map();
+      coachReports
         .filter(r => !deletedIds.includes(r.player_id?.toString()))
-        .map(r => ({
-          _id: r.id,
-          playerId: r.player_id,
-          report: r.report_data
-        }));
+        .forEach(r => {
+          latestReportsMap.set(r.player_id?.toString(), {
+            _id: r.id,
+            playerId: r.player_id,
+            report: r.report_data
+          });
+        });
+      db.coach_reports = Array.from(latestReportsMap.values());
     }
 
-    // 6. Fetch goals
+    // 6. Fetch goals (Deduplicate by playerId, category, title)
     const { data: goals, error: goError } = await supabase.from('goals').select('*');
     if (!goError && goals) {
-      db.goals = goals
+      const seenGoalKeys = new Set();
+      const cleanGoals = [];
+      goals
         .filter(g => !deletedIds.includes(g.player_id?.toString()))
-        .map(g => ({
-          _id: g.id,
-          playerId: g.player_id,
-          category: g.category,
-          title: g.title,
-          status: g.status
-        }));
+        .forEach(g => {
+          const key = `${g.player_id}_${g.category}_${g.title}`;
+          if (!seenGoalKeys.has(key)) {
+            seenGoalKeys.add(key);
+            cleanGoals.push({
+              _id: g.id,
+              playerId: g.player_id,
+              category: g.category,
+              title: g.title,
+              status: g.status
+            });
+          }
+        });
+      db.goals = cleanGoals;
     }
 
-    // 7. Fetch physical measurements (tracking)
+    // 7. Fetch physical measurements (Deduplicate by playerId, date)
     const { data: physicalMeasurements, error: pmError } = await supabase.from('physical_measurements').select('*');
     if (!pmError && physicalMeasurements) {
-      db.physicalMeasurements = physicalMeasurements
+      const seenPMKeys = new Set();
+      const cleanPM = [];
+      physicalMeasurements
         .filter(pm => !deletedIds.includes(pm.player_id?.toString()))
-        .map(pm => ({
-          _id: pm.id,
-          playerId: pm.player_id,
-          date: pm.date,
-          heightCm: pm.height_cm,
-          weightKg: pm.weight_kg,
-          kulac: pm.kulac,
-          bel: pm.bel,
-          omuz: pm.omuz,
-          bacak: pm.bacak,
-          note: pm.note
-        }));
+        .forEach(pm => {
+          const key = `${pm.player_id}_${pm.date}`;
+          if (!seenPMKeys.has(key)) {
+            seenPMKeys.add(key);
+            cleanPM.push({
+              _id: pm.id,
+              playerId: pm.player_id,
+              date: pm.date,
+              heightCm: pm.height_cm,
+              weightKg: pm.weight_kg,
+              kulac: pm.kulac,
+              bel: pm.bel,
+              omuz: pm.omuz,
+              bacak: pm.bacak,
+              note: pm.note
+            });
+          }
+        });
+      db.physicalMeasurements = cleanPM;
     }
 
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(db));
+    const deduplicatedDb = cleanDuplicates(db);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(deduplicatedDb));
     window.dispatchEvent(new Event('auth-changed'));
     console.log('Database synced from Supabase successfully.');
   } catch (err) {
@@ -218,9 +319,11 @@ export async function syncToSupabase(db) {
   
   console.log('Syncing database updates to Supabase cloud...');
   try {
+    const cleanDb = cleanDuplicates(db);
+
     // 1. Sync profiles
-    if (db.profiles && db.profiles.length > 0) {
-      const mappedProfiles = db.profiles.map(p => ({
+    if (cleanDb.profiles && cleanDb.profiles.length > 0) {
+      const mappedProfiles = cleanDb.profiles.map(p => ({
         id: p.id,
         full_name: p.fullName || 'Bilinmeyen',
         role: p.role || 'student',
@@ -238,85 +341,119 @@ export async function syncToSupabase(db) {
       await supabase.from('profiles').upsert(mappedProfiles);
     }
 
-    // 2. Sync genetics
-    if (db.genetics && db.genetics.length > 0) {
-      const mappedGenetics = db.genetics.map(g => ({
-        ...(g._id ? { id: g._id } : {}),
-        player_id: g.playerId,
-        father_height: g.fatherHeight,
-        mother_height: g.motherHeight,
-        target_height: g.targetHeight,
-        genetics_note: g.note,
-        allergy: g.allergy
-      }));
-      await supabase.from('genetics').upsert(mappedGenetics, { onConflict: 'player_id' });
+    // 2. Sync genetics per player
+    if (cleanDb.genetics && cleanDb.genetics.length > 0) {
+      const latestGeneticsMap = new Map();
+      cleanDb.genetics.forEach(g => {
+        if (g.playerId) latestGeneticsMap.set(g.playerId.toString(), g);
+      });
+      for (const [pid, g] of latestGeneticsMap.entries()) {
+        await supabase.from('genetics').delete().eq('player_id', pid);
+        await supabase.from('genetics').insert({
+          player_id: g.playerId,
+          father_height: g.fatherHeight,
+          mother_height: g.motherHeight,
+          target_height: g.targetHeight,
+          genetics_note: g.note,
+          allergy: g.allergy
+        });
+      }
     }
 
-    // 3. Sync antropometri
-    if (db.antropometri && db.antropometri.length > 0) {
-      const mappedAntro = db.antropometri.map(a => ({
-        ...(a._id ? { id: a._id } : {}),
-        player_id: a.playerId,
-        date: a.date,
-        metric: a.metric,
-        val_2025: a.val2025?.toString(),
-        val_2026: a.val2026?.toString(),
-        change_val: a.change?.toString(),
-        comment: a.comment
-      }));
-      await supabase.from('antropometri').upsert(mappedAntro);
+    // 3. Sync antropometri per player
+    if (cleanDb.antropometri && cleanDb.antropometri.length > 0) {
+      const playerIds = [...new Set(cleanDb.antropometri.map(a => a.playerId?.toString()).filter(Boolean))];
+      for (const pid of playerIds) {
+        await supabase.from('antropometri').delete().eq('player_id', pid);
+        const playerAntro = cleanDb.antropometri.filter(a => a.playerId?.toString() === pid);
+        if (playerAntro.length > 0) {
+          const mappedAntro = playerAntro.map(a => ({
+            player_id: a.playerId,
+            date: a.date,
+            metric: a.metric,
+            val_2025: a.val2025?.toString(),
+            val_2026: a.val2026?.toString(),
+            change_val: a.change?.toString(),
+            comment: a.comment
+          }));
+          await supabase.from('antropometri').insert(mappedAntro);
+        }
+      }
     }
 
-    // 4. Sync skills
-    if (db.skills && db.skills.length > 0) {
-      const mappedSkills = db.skills.map(s => ({
-        ...(s._id ? { id: s._id } : {}),
-        player_id: s.playerId,
-        name: s.name,
-        type: s.type,
-        rating: s.status,
-        analysis: s.analysis
-      }));
-      await supabase.from('skills').upsert(mappedSkills);
+    // 4. Sync skills per player
+    if (cleanDb.skills && cleanDb.skills.length > 0) {
+      const playerIds = [...new Set(cleanDb.skills.map(s => s.playerId?.toString()).filter(Boolean))];
+      for (const pid of playerIds) {
+        await supabase.from('skills').delete().eq('player_id', pid);
+        const playerSkills = cleanDb.skills.filter(s => s.playerId?.toString() === pid);
+        if (playerSkills.length > 0) {
+          const mappedSkills = playerSkills.map(s => ({
+            player_id: s.playerId,
+            name: s.name,
+            type: s.type,
+            rating: s.status,
+            analysis: s.analysis
+          }));
+          await supabase.from('skills').insert(mappedSkills);
+        }
+      }
     }
 
-    // 5. Sync coach reports
-    if (db.coach_reports && db.coach_reports.length > 0) {
-      const mappedReports = db.coach_reports.map(r => ({
-        ...(r._id ? { id: r._id } : {}),
-        player_id: r.playerId,
-        report_data: r.report
-      }));
-      await supabase.from('coach_reports').upsert(mappedReports, { onConflict: 'player_id' });
+    // 5. Sync coach reports per player
+    if (cleanDb.coach_reports && cleanDb.coach_reports.length > 0) {
+      const latestReportsMap = new Map();
+      cleanDb.coach_reports.forEach(r => {
+        if (r.playerId) latestReportsMap.set(r.playerId.toString(), r);
+      });
+      for (const [pid, r] of latestReportsMap.entries()) {
+        await supabase.from('coach_reports').delete().eq('player_id', pid);
+        await supabase.from('coach_reports').insert({
+          player_id: r.playerId,
+          report_data: r.report
+        });
+      }
     }
 
-    // 6. Sync goals
-    if (db.goals && db.goals.length > 0) {
-      const mappedGoals = db.goals.map(g => ({
-        ...(g._id ? { id: g._id } : {}),
-        player_id: g.playerId,
-        category: g.category,
-        title: g.title,
-        status: g.status || 'active'
-      }));
-      await supabase.from('goals').upsert(mappedGoals);
+    // 6. Sync goals per player
+    if (cleanDb.goals && cleanDb.goals.length > 0) {
+      const playerIds = [...new Set(cleanDb.goals.map(g => g.playerId?.toString()).filter(Boolean))];
+      for (const pid of playerIds) {
+        await supabase.from('goals').delete().eq('player_id', pid);
+        const playerGoals = cleanDb.goals.filter(g => g.playerId?.toString() === pid);
+        if (playerGoals.length > 0) {
+          const mappedGoals = playerGoals.map(g => ({
+            player_id: g.playerId,
+            category: g.category,
+            title: g.title,
+            status: g.status || 'active'
+          }));
+          await supabase.from('goals').insert(mappedGoals);
+        }
+      }
     }
 
-    // 7. Sync physical measurements (tracking)
-    if (db.physicalMeasurements && db.physicalMeasurements.length > 0) {
-      const mappedPM = db.physicalMeasurements.map(pm => ({
-        ...(pm._id ? { id: pm._id } : {}),
-        player_id: pm.playerId,
-        date: pm.date,
-        height_cm: pm.heightCm?.toString(),
-        weight_kg: pm.weightKg?.toString(),
-        kulac: pm.kulac?.toString(),
-        bel: pm.bel?.toString(),
-        omuz: pm.omuz?.toString(),
-        bacak: pm.bacak?.toString(),
-        note: pm.note
-      }));
-      await supabase.from('physical_measurements').upsert(mappedPM);
+    // 7. Sync physical measurements (tracking) per player
+    if (cleanDb.physicalMeasurements && cleanDb.physicalMeasurements.length > 0) {
+      const playerIds = [...new Set(cleanDb.physicalMeasurements.map(pm => pm.playerId?.toString()).filter(Boolean))];
+      for (const pid of playerIds) {
+        await supabase.from('physical_measurements').delete().eq('player_id', pid);
+        const playerPM = cleanDb.physicalMeasurements.filter(pm => pm.playerId?.toString() === pid);
+        if (playerPM.length > 0) {
+          const mappedPM = playerPM.map(pm => ({
+            player_id: pm.playerId,
+            date: pm.date,
+            height_cm: pm.heightCm?.toString(),
+            weight_kg: pm.weightKg?.toString(),
+            kulac: pm.kulac?.toString(),
+            bel: pm.bel?.toString(),
+            omuz: pm.omuz?.toString(),
+            bacak: pm.bacak?.toString(),
+            note: pm.note
+          }));
+          await supabase.from('physical_measurements').insert(mappedPM);
+        }
+      }
     }
     
     console.log('Database synced to Supabase successfully.');
@@ -326,7 +463,10 @@ export async function syncToSupabase(db) {
 }
 
 export const localDb = {
-  get: () => JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}'),
+  get: () => {
+    const raw = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
+    return cleanDuplicates(raw);
+  },
   getDeletedIds: () => JSON.parse(localStorage.getItem('baskettrack_deleted_ids') || '[]'),
   getDeletedNames: () => JSON.parse(localStorage.getItem('baskettrack_deleted_names') || '[]'),
   markDeleted: (id) => {
@@ -350,9 +490,10 @@ export const localDb = {
     }
   },
   set: (data) => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+    const cleanData = cleanDuplicates(data);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleanData));
     if (isSupabaseConfigured) {
-      syncToSupabase(data);
+      syncToSupabase(cleanData);
     }
   },
   clear: () => {

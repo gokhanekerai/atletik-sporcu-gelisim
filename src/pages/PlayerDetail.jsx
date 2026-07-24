@@ -340,7 +340,7 @@ export default function PlayerDetail() {
   };
 
   // 5. Coach Report
-  const handleSaveCoachReport = () => {
+  const handleSaveCoachReport = async () => {
     const currentDb = localDb.get();
     
     if (!currentDb.coach_reports) currentDb.coach_reports = [];
@@ -370,6 +370,18 @@ export default function PlayerDetail() {
     }
 
     saveDb(currentDb, 'Antrenör raporu başarıyla kaydedildi!');
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('coach_reports').delete().eq('player_id', effectivePlayerId);
+        await supabase.from('coach_reports').insert({
+          player_id: effectivePlayerId,
+          report_data: reportObj
+        });
+      } catch (err) {
+        console.error('Failed to sync coach report to Supabase:', err);
+      }
+    }
   };
 
   // 6. Takip & Hedefler
@@ -383,7 +395,9 @@ export default function PlayerDetail() {
       if (g.title) {
         const record = {
           playerId: effectivePlayerId,
-          ...g
+          category: g.category || 'Teknik',
+          title: g.title,
+          status: g.status || 'active'
         };
         currentDb.goals.push(record);
         goalsList.push(record);
@@ -397,7 +411,14 @@ export default function PlayerDetail() {
       if (m.date) {
         const record = {
           playerId: effectivePlayerId,
-          ...m
+          date: m.date,
+          heightCm: m.heightCm || '',
+          weightKg: m.weightKg || '',
+          kulac: m.kulac || '',
+          bel: m.bel || '',
+          omuz: m.omuz || '',
+          bacak: m.bacak || '',
+          note: m.note || ''
         };
         currentDb.physicalMeasurements.push(record);
         trackingList.push(record);
