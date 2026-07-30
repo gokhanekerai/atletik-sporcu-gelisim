@@ -927,9 +927,8 @@ export default function Reports() {
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
             width: 100% !important;
-            height: 100vh !important;
+            height: auto !important;
             min-height: 100vh !important;
-            max-height: 100vh !important;
             page-break-after: always !important;
             break-after: page !important;
             box-sizing: border-box !important;
@@ -943,9 +942,8 @@ export default function Reports() {
 
           .report-panel {
             width: 100% !important;
-            height: 100% !important;
+            height: auto !important;
             min-height: 100% !important;
-            max-height: 100% !important;
             box-sizing: border-box !important;
             padding: 14px 14px 32px !important;
             border: 1.5px solid #1e293b !important;
@@ -953,7 +951,6 @@ export default function Reports() {
             background: #ffffff !important;
             color: #0f172a !important;
             position: relative !important;
-            overflow: hidden !important;
             display: flex !important;
             flex-direction: column !important;
             -webkit-print-color-adjust: exact !important;
@@ -1097,10 +1094,8 @@ export default function Reports() {
             color: #475569 !important;
             font-size: 6.5pt !important;
             line-height: 1.25 !important;
-            overflow: hidden !important;
-            display: -webkit-box !important;
-            -webkit-line-clamp: 3 !important;
-            -webkit-box-orient: vertical !important;
+            word-wrap: break-word !important;
+            white-space: normal !important;
           }
 
           /* ── Tablolar ── */
