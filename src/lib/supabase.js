@@ -341,118 +341,112 @@ export async function syncToSupabase(db) {
       await supabase.from('profiles').upsert(mappedProfiles);
     }
 
-    // 2. Sync genetics per player
+    // 2. Sync genetics (Bulk)
     if (cleanDb.genetics && cleanDb.genetics.length > 0) {
       const latestGeneticsMap = new Map();
       cleanDb.genetics.forEach(g => {
         if (g.playerId) latestGeneticsMap.set(g.playerId.toString(), g);
       });
-      for (const [pid, g] of latestGeneticsMap.entries()) {
-        await supabase.from('genetics').delete().eq('player_id', pid);
-        await supabase.from('genetics').insert({
+      const playerIds = Array.from(latestGeneticsMap.keys());
+      if (playerIds.length > 0) {
+        await supabase.from('genetics').delete().in('player_id', playerIds);
+        const mappedGenetics = Array.from(latestGeneticsMap.values()).map(g => ({
           player_id: g.playerId,
           father_height: g.fatherHeight,
           mother_height: g.motherHeight,
           target_height: g.targetHeight,
           genetics_note: g.note,
           allergy: g.allergy
-        });
+        }));
+        await supabase.from('genetics').insert(mappedGenetics);
       }
     }
 
-    // 3. Sync antropometri per player
+    // 3. Sync antropometri (Bulk)
     if (cleanDb.antropometri && cleanDb.antropometri.length > 0) {
       const playerIds = [...new Set(cleanDb.antropometri.map(a => a.playerId?.toString()).filter(Boolean))];
-      for (const pid of playerIds) {
-        await supabase.from('antropometri').delete().eq('player_id', pid);
-        const playerAntro = cleanDb.antropometri.filter(a => a.playerId?.toString() === pid);
-        if (playerAntro.length > 0) {
-          const mappedAntro = playerAntro.map(a => ({
-            player_id: a.playerId,
-            date: a.date,
-            metric: a.metric,
-            val_2025: a.val2025?.toString(),
-            val_2026: a.val2026?.toString(),
-            change_val: a.change?.toString(),
-            comment: a.comment
-          }));
-          await supabase.from('antropometri').insert(mappedAntro);
-        }
+      if (playerIds.length > 0) {
+        await supabase.from('antropometri').delete().in('player_id', playerIds);
+        const mappedAntro = cleanDb.antropometri.filter(a => a.playerId).map(a => ({
+          player_id: a.playerId.toString(),
+          date: a.date,
+          metric: a.metric,
+          val_2025: a.val2025?.toString(),
+          val_2026: a.val2026?.toString(),
+          change_val: a.change?.toString(),
+          comment: a.comment
+        }));
+        await supabase.from('antropometri').insert(mappedAntro);
       }
     }
 
-    // 4. Sync skills per player
+    // 4. Sync skills (Bulk)
     if (cleanDb.skills && cleanDb.skills.length > 0) {
       const playerIds = [...new Set(cleanDb.skills.map(s => s.playerId?.toString()).filter(Boolean))];
-      for (const pid of playerIds) {
-        await supabase.from('skills').delete().eq('player_id', pid);
-        const playerSkills = cleanDb.skills.filter(s => s.playerId?.toString() === pid);
-        if (playerSkills.length > 0) {
-          const mappedSkills = playerSkills.map(s => ({
-            player_id: s.playerId,
-            name: s.name,
-            type: s.type,
-            rating: s.status,
-            analysis: s.analysis
-          }));
-          await supabase.from('skills').insert(mappedSkills);
-        }
+      if (playerIds.length > 0) {
+        await supabase.from('skills').delete().in('player_id', playerIds);
+        const mappedSkills = cleanDb.skills.filter(s => s.playerId).map(s => ({
+          player_id: s.playerId.toString(),
+          name: s.name,
+          type: s.type,
+          rating: s.status,
+          analysis: s.analysis
+        }));
+        // Supabase bulk insert limit is typically 1000 rows. If skills > 1000, chunking is needed.
+        // Usually, 20 players * 30 skills = 600, so it's safe.
+        await supabase.from('skills').insert(mappedSkills);
       }
     }
 
-    // 5. Sync coach reports per player
+    // 5. Sync coach reports (Bulk)
     if (cleanDb.coach_reports && cleanDb.coach_reports.length > 0) {
       const latestReportsMap = new Map();
       cleanDb.coach_reports.forEach(r => {
         if (r.playerId) latestReportsMap.set(r.playerId.toString(), r);
       });
-      for (const [pid, r] of latestReportsMap.entries()) {
-        await supabase.from('coach_reports').delete().eq('player_id', pid);
-        await supabase.from('coach_reports').insert({
-          player_id: r.playerId,
+      const playerIds = Array.from(latestReportsMap.keys());
+      if (playerIds.length > 0) {
+        await supabase.from('coach_reports').delete().in('player_id', playerIds);
+        const mappedReports = Array.from(latestReportsMap.values()).map(r => ({
+          player_id: r.playerId.toString(),
           report_data: r.report
-        });
+        }));
+        await supabase.from('coach_reports').insert(mappedReports);
       }
     }
 
-    // 6. Sync goals per player
+    // 6. Sync goals (Bulk)
     if (cleanDb.goals && cleanDb.goals.length > 0) {
       const playerIds = [...new Set(cleanDb.goals.map(g => g.playerId?.toString()).filter(Boolean))];
-      for (const pid of playerIds) {
-        await supabase.from('goals').delete().eq('player_id', pid);
-        const playerGoals = cleanDb.goals.filter(g => g.playerId?.toString() === pid);
-        if (playerGoals.length > 0) {
-          const mappedGoals = playerGoals.map(g => ({
-            player_id: g.playerId,
-            category: g.category,
-            title: g.title,
-            status: g.status || 'active'
-          }));
-          await supabase.from('goals').insert(mappedGoals);
-        }
+      if (playerIds.length > 0) {
+        await supabase.from('goals').delete().in('player_id', playerIds);
+        const mappedGoals = cleanDb.goals.filter(g => g.playerId).map(g => ({
+          player_id: g.playerId.toString(),
+          category: g.category,
+          title: g.title,
+          status: g.status || 'active'
+        }));
+        await supabase.from('goals').insert(mappedGoals);
       }
     }
 
-    // 7. Sync physical measurements (tracking) per player
+    // 7. Sync physical measurements (Bulk)
     if (cleanDb.physicalMeasurements && cleanDb.physicalMeasurements.length > 0) {
       const playerIds = [...new Set(cleanDb.physicalMeasurements.map(pm => pm.playerId?.toString()).filter(Boolean))];
-      for (const pid of playerIds) {
-        await supabase.from('physical_measurements').delete().eq('player_id', pid);
-        const playerPM = cleanDb.physicalMeasurements.filter(pm => pm.playerId?.toString() === pid);
-        if (playerPM.length > 0) {
-          const mappedPM = playerPM.map(pm => ({
-            player_id: pm.playerId,
-            date: pm.date,
-            height_cm: pm.heightCm?.toString(),
-            weight_kg: pm.weightKg?.toString(),
-            kulac: pm.kulac?.toString(),
-            bel: pm.bel?.toString(),
-            omuz: pm.omuz?.toString(),
-            bacak: pm.bacak?.toString(),
-            note: pm.note
-          }));
-          await supabase.from('physical_measurements').insert(mappedPM);
-        }
+      if (playerIds.length > 0) {
+        await supabase.from('physical_measurements').delete().in('player_id', playerIds);
+        const mappedPM = cleanDb.physicalMeasurements.filter(pm => pm.playerId).map(pm => ({
+          player_id: pm.playerId.toString(),
+          date: pm.date,
+          height_cm: pm.heightCm?.toString(),
+          weight_kg: pm.weightKg?.toString(),
+          kulac: pm.kulac?.toString(),
+          bel: pm.bel?.toString(),
+          omuz: pm.omuz?.toString(),
+          bacak: pm.bacak?.toString(),
+          note: pm.note
+        }));
+        await supabase.from('physical_measurements').insert(mappedPM);
       }
     }
     

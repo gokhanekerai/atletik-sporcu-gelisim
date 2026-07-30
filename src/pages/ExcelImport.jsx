@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, PlayCircle, Copy, Check, Sparkles, Download 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { isSupabaseConfigured, supabase, localDb, normalizeName, generateEmailFromName } from '../lib/supabase';
+import { isSupabaseConfigured, supabase, localDb, normalizeName, generateEmailFromName, syncFromSupabase } from '../lib/supabase';
 
 const CHATGPT_PROMPT_TEMPLATE = `Sen bir basketbol antrenörüne yardım eden uzman bir spor analisti asistanısın. Aşağıda bir antrenörün serbest metin olarak yazdığı sporcu gözlemleri, notlar ve bilgiler yer almaktadır. Bu bilgileri analiz ederek belirtilen JSON formatında çıktı üret.
 
@@ -579,6 +579,11 @@ export default function ExcelImport() {
         importedCount++;
       }
 
+      if (isSupabaseConfigured) {
+        await syncFromSupabase();
+      }
+      window.dispatchEvent(new Event('auth-changed'));
+
       setGptStatus({
         type: 'success',
         message: `Başarılı! ${importedCount} sporcu başarıyla sisteme aktarıldı.`
@@ -639,6 +644,11 @@ export default function ExcelImport() {
         updateFile(item.name, { status: STATUS.ERROR, error: 'Kayıt hatası: ' + (err.message || 'Bilinmeyen hata') });
       }
     }
+
+    if (isSupabaseConfigured) {
+      await syncFromSupabase();
+    }
+    window.dispatchEvent(new Event('auth-changed'));
 
     setRunning(false);
   };
