@@ -109,7 +109,7 @@ export default function PlayerDetail() {
       fullName: player.fullName || '',
       birthDate: player.birthDate || '',
       category: player.category || '',
-      jerseyNumber: player.jerseyNumber || '',
+      jerseyNumber: player.jerseyNumber ?? '',
       dominantHand: player.dominantHand || 'right',
       position: player.position || '',
       bio: player.bio || '',
@@ -597,7 +597,7 @@ export default function PlayerDetail() {
               {player.fullName}
             </h1>
             <div style={{ display: 'flex', gap: 16, fontSize: '0.8rem', color: 'var(--c-text-2)', flexWrap: 'wrap' }}>
-              <span>👕 Forma: #{player.jerseyNumber || '—'}</span>
+              <span>👕 Forma: #{player.jerseyNumber ?? '—'}</span>
               <span>📌 Pozisyon: {player.position || '—'}</span>
               <span>🎂 Yaş: {getAge(player.birthDate)}</span>
               <span>📊 Kategori: {player.category || '—'}</span>

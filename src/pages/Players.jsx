@@ -439,7 +439,7 @@ export default function Players() {
                   fontFamily: 'var(--font-display)', fontWeight: 900,
                   fontSize: '1.1rem', color: 'var(--c-text-3)',
                 }}>
-                  #{player.jerseyNumber || '—'}
+                  #{player.jerseyNumber ?? '—'}
                 </div>
 
                 {/* Avatar */}
@@ -482,7 +482,7 @@ export default function Players() {
                     width: 'fit-content'
                   }}>
                     <span style={{ color: 'var(--c-text-2)' }}>📧 E-posta: <strong style={{ color: 'var(--c-text)', userSelect: 'all' }}>{player.email || '—'}</strong></span>
-                    <span style={{ color: 'var(--c-text-2)', marginLeft: 6 }}>🔑 Şifre: <strong style={{ color: 'var(--c-text)', userSelect: 'all' }}>{player.password || player.jerseyNumber || '—'}</strong></span>
+                    <span style={{ color: 'var(--c-text-2)', marginLeft: 6 }}>🔑 Şifre: <strong style={{ color: 'var(--c-text)', userSelect: 'all' }}>{(player.password || player.jerseyNumber) ?? '—'}</strong></span>
                   </div>
                 </div>
 
