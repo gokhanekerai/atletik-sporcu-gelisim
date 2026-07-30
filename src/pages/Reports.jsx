@@ -707,11 +707,11 @@ export default function Reports() {
         }
 
         .report-hero-img-area {
-          width: 170px;
-          height: 200px;
+          width: 160px;
+          height: 160px;
           background: linear-gradient(180deg, rgba(192,57,43,.18), rgba(192,57,43,.04));
-          border-radius: 10px;
-          border: 1.5px solid rgba(192,57,43,.35);
+          border-radius: 50%;
+          border: 2px solid rgba(192,57,43,.35);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1190,10 +1190,11 @@ export default function Reports() {
             font-family: 'Orbitron', sans-serif !important;
           }
           .report-hero-img-area {
-            width: 120px !important;
-            height: 145px !important;
+            width: 130px !important;
+            height: 130px !important;
             margin-bottom: 7px !important;
-            border: 1.5px solid rgba(192,57,43,.35) !important;
+            border-radius: 50% !important;
+            border: 2px solid rgba(192,57,43,.35) !important;
           }
           .report-hero-img-emoji { font-size: 58px !important; }
           .report-hero-club-sub {
@@ -1473,7 +1474,7 @@ export default function Reports() {
                 <div className="report-hero-season">2025 – 2026 SEZONU</div>
 
                 <div className="report-hero-img-area" style={{
-                  background: selectedPlayer.avatarUrl ? `url(${selectedPlayer.avatarUrl}) center/cover no-repeat` : undefined
+                  background: selectedPlayer.avatarUrl ? `url(${selectedPlayer.avatarUrl}) center/contain no-repeat #fff` : undefined
                 }}>
                   <div className="report-hero-img-bg"></div>
                   {!selectedPlayer.avatarUrl && <div className="report-hero-img-emoji">🏀</div>}

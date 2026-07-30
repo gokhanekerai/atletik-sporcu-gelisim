@@ -570,7 +570,7 @@ export default function PlayerDetail() {
             <div className="avatar avatar-xl" style={{ 
               boxShadow: 'var(--shadow-orange)',
               overflow: 'hidden',
-              background: player.avatarUrl ? `url(${player.avatarUrl}) center/cover no-repeat` : 'var(--c-surface-3)'
+              background: player.avatarUrl ? `url(${player.avatarUrl}) center/contain no-repeat #fff` : 'var(--c-surface-3)'
             }}>
               {!player.avatarUrl && initials(player.fullName)}
             </div>

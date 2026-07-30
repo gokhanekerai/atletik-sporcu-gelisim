@@ -445,7 +445,7 @@ export default function Players() {
                 {/* Avatar */}
                 <div className="avatar avatar-lg" style={{
                   overflow: 'hidden',
-                  background: player.avatarUrl ? `url(${player.avatarUrl}) center/cover no-repeat` : undefined
+                  background: player.avatarUrl ? `url(${player.avatarUrl}) center/contain no-repeat #fff` : undefined
                 }}>
                   {!player.avatarUrl && initials(player.fullName)}
                 </div>
