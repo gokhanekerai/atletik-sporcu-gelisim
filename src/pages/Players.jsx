@@ -444,6 +444,7 @@ export default function Players() {
 
                 {/* Avatar */}
                 <div className="avatar avatar-lg" style={{
+                  border: '3px solid #0b1a30',
                   overflow: 'hidden',
                   background: player.avatarUrl ? `url(${player.avatarUrl}) center/contain no-repeat #fff` : undefined
                 }}>

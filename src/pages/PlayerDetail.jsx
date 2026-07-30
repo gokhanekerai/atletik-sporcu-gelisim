@@ -568,7 +568,8 @@ export default function PlayerDetail() {
         <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative' }}>
             <div className="avatar avatar-xl" style={{ 
-              boxShadow: 'var(--shadow-orange)',
+              boxShadow: '0 0 12px rgba(11,26,48,0.5)',
+              border: '4px solid #0b1a30',
               overflow: 'hidden',
               background: player.avatarUrl ? `url(${player.avatarUrl}) center/contain no-repeat #fff` : 'var(--c-surface-3)'
             }}>

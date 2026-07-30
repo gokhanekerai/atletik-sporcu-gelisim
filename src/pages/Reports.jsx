@@ -711,7 +711,7 @@ export default function Reports() {
           height: 160px;
           background: linear-gradient(180deg, rgba(192,57,43,.18), rgba(192,57,43,.04));
           border-radius: 50%;
-          border: 2px solid rgba(192,57,43,.35);
+          border: 4px solid #0b1a30;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1194,7 +1194,7 @@ export default function Reports() {
             height: 130px !important;
             margin-bottom: 7px !important;
             border-radius: 50% !important;
-            border: 2px solid rgba(192,57,43,.35) !important;
+            border: 4px solid #0b1a30 !important;
           }
           .report-hero-img-emoji { font-size: 58px !important; }
           .report-hero-club-sub {
