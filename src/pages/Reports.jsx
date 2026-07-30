@@ -322,6 +322,16 @@ export default function Reports() {
           flex-shrink: 0;
         }
 
+        .report-dot-r {
+          display: inline-block;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #c0392b;
+          box-shadow: 0 0 5px #c0392b;
+          flex-shrink: 0;
+        }
+
         .report-skill-row {
           display: grid;
           grid-template-columns: 120px 18px 1fr;
@@ -1207,10 +1217,8 @@ export default function Reports() {
             color: #334155 !important;
             font-size: 7pt !important;
             line-height: 1.3 !important;
-            overflow: hidden !important;
-            display: -webkit-box !important;
-            -webkit-line-clamp: 4 !important;
-            -webkit-box-orient: vertical !important;
+            word-wrap: break-word !important;
+            white-space: normal !important;
           }
           .report-c-sign {
             color: #e67e22 !important;
@@ -1256,6 +1264,20 @@ export default function Reports() {
           }
           .report-dot-y::after { content: 'gelişim' !important; }
 
+          .report-dot-r {
+            background: #c0392b !important;
+            color: #ffffff !important;
+            font-size: 5.5pt !important;
+            font-weight: 700 !important;
+            padding: 1px 3px !important;
+            border-radius: 3px !important;
+            display: inline-block !important;
+            box-shadow: none !important;
+            width: auto !important;
+            height: auto !important;
+          }
+          .report-dot-r::after { content: 'zayıf' !important; }
+
           /* ── Oran kartları ── */
           .report-ratio-grid { gap: 5px !important; margin-top: 5px !important; }
           .report-ratio-card {
@@ -1293,10 +1315,8 @@ export default function Reports() {
             font-size: 6.5pt !important;
             color: #475569 !important;
             line-height: 1.3 !important;
-            overflow: hidden !important;
-            display: -webkit-box !important;
-            -webkit-line-clamp: 3 !important;
-            -webkit-box-orient: vertical !important;
+            word-wrap: break-word !important;
+            white-space: normal !important;
           }
 
           /* ── Hedefler ── */
@@ -1600,7 +1620,7 @@ export default function Reports() {
                   teknikSkills.map((s, i) => (
                     <div key={i} className="report-skill-row">
                       <div className="report-skill-name">{s.name}</div>
-                      <div style={{ paddingTop: 3 }}><span className={s.status?.includes('🟢') ? 'report-dot-g' : 'report-dot-y'}></span></div>
+                      <div style={{ paddingTop: 3 }}><span className={s.status?.includes('🟢') ? 'report-dot-g' : s.status?.includes('🔴') ? 'report-dot-r' : 'report-dot-y'}></span></div>
                       <div className="report-skill-txt">{s.analysis}</div>
                     </div>
                   ))
@@ -1611,17 +1631,18 @@ export default function Reports() {
                 <div className="report-legend">
                   <span><span className="report-legend-dot" style={{ background: '#27ae60' }}></span> Güçlü Yön</span>
                   <span><span className="report-legend-dot" style={{ background: '#f1c40f' }}></span> Gelişim Alanı</span>
+                  <span><span className="report-legend-dot" style={{ background: '#c0392b' }}></span> Zayıf Yön</span>
                 </div>
 
                 <div className="report-section-label" style={{ marginTop: 14 }}>Görsel Değerlendirme</div>
                 {teknikSkills.map((s, i) => {
-                  const percent = s.status?.includes('🟢') ? 80 : s.status?.includes('🟡') ? 50 : 30;
-                  const color = s.status?.includes('🟢') ? '#27ae60' : '#f1c40f';
+                  const percent = s.status?.includes('🟢') ? 80 : s.status?.includes('🟡') ? 50 : 20;
+                  const color = s.status?.includes('🟢') ? '#27ae60' : s.status?.includes('🔴') ? '#c0392b' : '#f1c40f';
                   return (
                     <div key={i} className="report-pb-wrap">
                       <div className="report-pb-head">
                         <span className="report-pb-label">{s.name}</span>
-                        <span className="report-pb-val" style={{ color }}>{s.status?.includes('🟢') ? 'Güçlü' : 'Gelişiyor'}</span>
+                        <span className="report-pb-val" style={{ color }}>{s.status?.includes('🟢') ? 'Güçlü' : s.status?.includes('🔴') ? 'Zayıf' : 'Gelişiyor'}</span>
                       </div>
                       <div className="report-pb">
                         <div className="report-pb-fill" style={{ width: `${percent}%`, background: `linear-gradient(90deg, ${color}, rgba(255,255,255,0.1))` }}></div>
@@ -1649,7 +1670,7 @@ export default function Reports() {
                     <div key={i} className="report-skill-row">
                       <div className="report-skill-name">{s.name}</div>
                       <div style={{ paddingTop: 3 }}>
-                        <span className={s.status?.includes('🟢') ? "report-dot-g" : "report-dot-y"}></span>
+                        <span className={s.status?.includes('🟢') ? "report-dot-g" : s.status?.includes('🔴') ? "report-dot-r" : "report-dot-y"}></span>
                       </div>
                       <div className="report-skill-txt">{s.analysis}</div>
                     </div>
@@ -1661,6 +1682,7 @@ export default function Reports() {
                 <div className="report-legend" style={{ marginTop: 20 }}>
                   <span><span className="report-legend-dot" style={{ background: '#27ae60' }}></span> Güçlü Yön</span>
                   <span><span className="report-legend-dot" style={{ background: '#f1c40f' }}></span> Gelişim Alanı</span>
+                  <span><span className="report-legend-dot" style={{ background: '#c0392b' }}></span> Zayıf Yön</span>
                 </div>
                 <div className="report-pnum">05</div>
               </div>
