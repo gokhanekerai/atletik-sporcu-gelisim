@@ -604,18 +604,18 @@ export default function PlayerDetail() {
             </div>
           </div>
 
-          {isAdmin && (
+          {canEdit && (
             <div style={{
               background: 'var(--c-surface-3)', borderRadius: 'var(--r-md)',
               padding: '10px 14px', border: '1px solid rgba(255,255,255,0.03)',
               display: 'flex', gap: 8, alignItems: 'center'
             }}>
               <div style={{ fontSize: '0.75rem' }}>
-                <div style={{ color: 'var(--c-text-3)' }}>Şifre:</div>
+                <div style={{ color: 'var(--c-text-3)' }}>{isAdmin ? 'Şifre Belirle:' : 'Yeni Şifre:'}</div>
                 <input 
                   type="text" 
-                  style={{ background: 'var(--c-surface-2)', padding: '4px 8px', fontSize: '0.75rem', width: 70, border: '1px solid var(--c-border)' }}
-                  placeholder={player.password || '10'}
+                  style={{ background: 'var(--c-surface-2)', padding: '4px 8px', fontSize: '0.75rem', width: 90, border: '1px solid var(--c-border)' }}
+                  placeholder={isAdmin ? (player.password || '10') : 'Yeni Şifre'}
                   value={passwordState}
                   onChange={e => setPasswordState(e.target.value)}
                 />
