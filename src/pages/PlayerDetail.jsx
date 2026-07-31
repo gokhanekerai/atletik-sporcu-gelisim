@@ -36,7 +36,7 @@ export default function PlayerDetail() {
   
   const userRole = localStorage.getItem('user_role') || 'admin';
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
-  const effectivePlayerId = id || '';
+  const effectivePlayerId = id || localStorage.getItem('user_id') || '';
 
   // Get raw DB state
   const db = localDb.get();
