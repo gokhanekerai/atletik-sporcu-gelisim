@@ -1190,5 +1190,29 @@ tbody td {
     background: var(--c-surface) !important;
     justify-content: space-between !important;
   }
+  
+  /* Fix Mobile Player Card Overflow */
+  .player-card {
+    flex-wrap: wrap;
+    padding: var(--space-4);
+    gap: var(--space-3);
+  }
+  .player-card-info {
+    flex: 1 1 100%;
+    order: 4;
+    margin-top: var(--space-1);
+  }
+  .player-card-stats {
+    flex: 1 1 100%;
+    order: 5;
+    justify-content: flex-start;
+    padding-top: var(--space-3);
+    margin-top: var(--space-1);
+    border-top: 1px dashed var(--c-border);
+  }
+  /* Push Delete and Chevron to the right of the first row */
+  .player-card > button.btn-ghost {
+    margin-left: auto;
+  }
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
