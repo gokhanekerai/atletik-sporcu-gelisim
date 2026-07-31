@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe, Moon, Bell, Database, Shield, Save } from 'lucide-react';
-
+import { Globe, Moon, Bell, Database, Shield, Save, UploadCloud } from 'lucide-react';
+import { localDb, syncToSupabase, isSupabaseConfigured } from '../lib/supabase';
 export default function Settings() {
   const { t, i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState(i18n.language || 'tr');
@@ -44,6 +44,21 @@ export default function Settings() {
       setSaved(false);
       window.location.reload(); // Reload window to apply database connection updates
     }, 1500);
+  };
+
+  const handleForceSync = async () => {
+    if (isSupabaseConfigured) {
+      setSaved(true);
+      try {
+        await syncToSupabase(localDb.get());
+        alert('Tüm yerel veriler buluta (Supabase) başarıyla aktarıldı! Artık mobil cihazınızdan da aynı verileri görebilirsiniz.');
+      } catch (err) {
+        alert('Aktarım sırasında hata oluştu: ' + err.message);
+      }
+      setSaved(false);
+    } else {
+      alert('Lütfen önce Supabase bağlantı bilgilerinizi girip Kaydet butonuna basın.');
+    }
   };
 
   return (
@@ -247,6 +262,17 @@ export default function Settings() {
                   value={supabaseAnonKey}
                   onChange={e => setSupabaseAnonKey(e.target.value)}
                 />
+              </div>
+              <div style={{ marginTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-3)' }}>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 8, background: 'var(--c-surface-3)' }}
+                  onClick={handleForceSync}
+                  disabled={saved}
+                >
+                  <UploadCloud size={16} />
+                  Bu Bilgisayardaki Verileri Buluta Aktar
+                </button>
               </div>
             </div>
           </div>
