@@ -338,7 +338,11 @@ export async function syncToSupabase(db) {
         email: p.email || generateEmailFromName(p.fullName),
         password: p.password || (p.jerseyNumber || 10).toString()
       }));
-      await supabase.from('profiles').upsert(mappedProfiles);
+      // Upsert one by one to avoid payload size limit with large base64 images
+      for (const profile of mappedProfiles) {
+        const { error } = await supabase.from('profiles').upsert([profile]);
+        if (error) console.error('Failed to sync profile:', profile.full_name, error);
+      }
     }
 
     // 2. Sync genetics (Bulk)
